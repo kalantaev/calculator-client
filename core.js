@@ -108,7 +108,11 @@ vagonka.crossOrigin = 'Anonymous';
 //---------------------- styles --------------------------//
 const TEXT_ALIGN_CENTER = 'text-align: center;';
 const CURSOR_POINTER = 'cursor: pointer;';
-const stylesCss = '.selectable-block:hover{box-shadow: 0 5px 7px 4px #96def4;}' +
+const stylesCss = '.control-btn {height: 40px;width:50px;border: 1px solid black; border-radius: 5px; cursor: pointer; display: inline-flex; margin-right:5px};' +
+    '.control-btn img {height: 40px;border-radius: 5px; cursor: pointer};' +
+    '.control-btn:hover{box-shadow: 0 5px 7px 4px #96def4;}' +
+    '.control-btn:hover img{box-shadow: 0 0 2px 2px #96def4;}' +
+    '.selectable-block:hover{box-shadow: 0 5px 7px 4px #96def4;}' +
     '.selectable-block{display: inline-block;margin: 0 15px 35px 0;vertical-align: top;width: 23%;border-radius: 20px;box-shadow: 0 5px 5px 3px #cecece;text-align: center;padding-bottom: 20px;cursor: pointer}';
 let css = document.createElement('style');
 css.type = 'text/css';
@@ -125,49 +129,128 @@ _addControlBtn = (div) => {
     let buttonDiv = document.createElement("div");
     buttonDiv.setAttribute("id", buttonsId);
     div.insertBefore(buttonDiv, div.children[3]);
-
-    buttonDiv.appendChild(createHtmlElement(HTML_ELEMENT.BUTTON, {
-        style: 'margin-right: 5px',
+    let imgAddPartition = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/partition2.png', width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
         text: titles['PUBLIC_ADD_PARTITION'],
         onClick: addElement
-    }));
-    buttonDiv.appendChild(createHtmlElement(HTML_ELEMENT.BUTTON, {
-        style: 'margin-right: 5px',
+    });
+    imgAddPartition.setAttribute("alt", titles['PUBLIC_ADD_PARTITION']);
+    imgAddPartition.setAttribute("title", titles['PUBLIC_ADD_PARTITION']);
+    let span1 = document.createElement("span");
+    span1.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span1);
+    span1.appendChild(imgAddPartition);
+
+    let imgAddDoor = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/door-btn.jpg', width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
         text: titles['PUBLIC_ADD_OUTER_DOOR'],
         onClick: () => selectDoor(div)
-    }));
-    buttonDiv.appendChild(createHtmlElement(HTML_ELEMENT.BUTTON, {
-        style: 'margin-right: 5px',
+    });
+    imgAddDoor.setAttribute("alt", titles['PUBLIC_ADD_OUTER_DOOR']);
+    imgAddDoor.setAttribute("title", titles['PUBLIC_ADD_OUTER_DOOR']);
+    let span2 = document.createElement("span");
+    span2.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span2);
+    span2.appendChild(imgAddDoor);
+
+    let imgAddWindow = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/window-btn.jpg', width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
         text: titles['PUBLIC_ADD_OUTER_WINDOW'],
         onClick: () => selectWindow(div)
-    }));
-    buttonDiv.appendChild(createHtmlElement(HTML_ELEMENT.BUTTON, {
-        style: 'margin-right: 5px',
+    });
+    imgAddWindow.setAttribute("alt", titles['PUBLIC_ADD_OUTER_WINDOW']);
+    imgAddWindow.setAttribute("title", titles['PUBLIC_ADD_OUTER_WINDOW']);
+    let span3 = document.createElement("span");
+    span3.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span3);
+    span3.appendChild(imgAddWindow);
+
+    let imgAddEllectro= createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/el.png', width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
         text: titles['PUBLIC_ADD_ELECTRIC'],
         onClick: addLight
+    });
+    imgAddEllectro.setAttribute("alt", titles['PUBLIC_ADD_ELECTRIC']);
+    imgAddEllectro.setAttribute("title", titles['PUBLIC_ADD_ELECTRIC']);
+
+    let span4 = document.createElement("span");
+    span4.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span4);
+    span4.appendChild(imgAddEllectro);
+
+    let img3D= createHtmlElement(HTML_ELEMENT.IMG, {
+        id: '3d-view',
+        src: 'static/3d.png', width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
+        text: 'Предпросмотр',
+        onClick: view3DBtnAction
+    });
+    img3D.setAttribute("alt", 'Предпросмотр');
+    img3D.setAttribute("title", 'Предпросмотр');
+
+    let span5 = document.createElement("span");
+    span5.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span5);
+    span5.appendChild(img3D);
+
+
+
+    let downloadBtn= createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/download.png', width: '50px',
+        style: 'border-radius: 5px;',
+        text: 'Скачать',
+        onClick: function () {
+            canvas.toBlob((b) => saveByteArray(b), 'image/png');
+        }
+    });
+    downloadBtn.setAttribute("alt", 'Скачать');
+    downloadBtn.setAttribute("title", 'Скачать');
+
+    let span6 = document.createElement("span");
+    span6.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span6);
+    span6.appendChild(downloadBtn);
+
+    let send= createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/calculate.png', width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
+        text: titles['PUBLIC_ORDER_SEND'],
+        onClick: function () {
+            orderSetting(div);
+        }
+    });
+    send.setAttribute("alt", titles['PUBLIC_ORDER_SEND']);
+    send.setAttribute("title", titles['PUBLIC_ORDER_SEND']);
+
+    let span7 = document.createElement("span");
+    span7.setAttribute("class", 'control-btn');
+    buttonDiv.appendChild(span7);
+    span7.appendChild(send);
+
+    let span8 = document.createElement("span");
+    span8.setAttribute("style", 'float: right');
+    buttonDiv.appendChild(span8);
+    let sp = createHtmlElement(HTML_ELEMENT.SPAN, {
+        text: 'Масштаб: '
+    });
+    span8.appendChild(sp);
+    span8.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {
+        id: 'scale-span',
+        text: scale
     }));
+};
 
-    //3D view
-    let view3d = createHtmlElement(HTML_ELEMENT.BUTTON, {text: 'Предпросмотр'});
-    view3d.addEventListener("click", function () {
-        view3D = !view3D;
-        changePositionAndScale();
-        drawAll();
-        view3D && setTimeout(() => drawAll(), 1000);
-    });
-    buttonDiv.appendChild(view3d);
-
-    let dawnload = createHtmlElement(HTML_ELEMENT.BUTTON, {text: 'Скачать'});
-    dawnload.addEventListener("click", function () {
-        canvas.toBlob((b) => saveByteArray(b), 'image/png');
-    });
-    buttonDiv.appendChild(dawnload);
-
-    let send = createHtmlElement(HTML_ELEMENT.BUTTON, {text: titles['PUBLIC_ORDER_SEND']});
-    send.addEventListener("click", function () {
-        orderSetting(div);
-    });
-    buttonDiv.appendChild(send);
+view3DBtnAction = () => {
+    view3D = !view3D;
+    let elementById = document.getElementById('3d-view');
+    elementById.src = view3D ? 'static/2d.png' : 'static/3d.png';
+    changePositionAndScale();
+    drawAll();
+    view3D && setTimeout(() => drawAll(), 1000);
 };
 
 function orderSetting(root) {
@@ -398,6 +481,8 @@ function changePositionAndScale() {
         karkas.setY((canvas.height - karkas.width / scale) / 2);
     }
     drawAll();
+    let elementById = document.getElementById('scale-span');
+    elementById.innerText = scale;
 }
 
 setDeffWidthCanvas = (div) => {
@@ -776,6 +861,7 @@ returnToSelect = () => {
         removeElement('full-scr-btn');
         removeElement('back-to-select');
         removeElement('price-block');
+        removeElement('order-block');
         removeElement('select-texture-block');
         view3D = false;
         _renderCalculator()
@@ -3422,11 +3508,14 @@ function reOffset() {
 
 //клик правой клавишей
 function rightClick() {
-    console.info("клик правой кнопкой")
+    console.info("клик правой кнопкой");
+    allDraging = true;
+    e.preventDefault();
+    e.stopPropagation();
 };
 
 //клик роликом
-function rolClick() {
+function rolClick(e) {
     canvas.style.cursor = "move";
     console.info("клик роликом");
     allDraging = true;
@@ -3473,11 +3562,11 @@ function needHideControlButton(mx, my, shape) {
         var rBott = shape.getY() + shape.getWidth() / scale + 50;
         // math test to see if mouse is inside rectangle
         if (mx > rLeft && mx < rRight && my > rTop && my < rBott) {
-            return (false);
+            return false;
         }
     }
     // the mouse isn't in any of the shapes
-    return (true);
+    return true;
 }
 
 function handleMouseDown(e) {
@@ -3529,12 +3618,78 @@ function handleMouseUp(e) {
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
+    updateIntersection();
+
     // the drag is over -- clear the isDragging flag
     isDragging = false;
 
     drawAll();
     serialize();
 }
+
+function updateIntersection() {
+    let selectedShape = getSelectedShape();
+    if (selectedShape.name === 'ChangeSizeElement' || selectedShape.name === 'DragElement' || selectedShape.name === 'TurnButton') {
+        selectedShape = getShapeById(selectedShape.parentId)
+    }
+    if (selectedShape.name === 'Partition') {
+        let data1 = getAllShapePoint(selectedShape);
+        let intersectionShape = shapes.filter(i => {
+            if(i.id === selectedShape.id || i.name !== 'Partition' ){
+                return false
+            } else {
+                let data2 = getAllShapePoint(i);
+                return data1.x1 < data2.x1 && data1.x2 > data2.x2 && data1.y1 > data2.y1 && data1.y4 < data2.y4 ||
+                    (data1.x1 > data2.x1 && data1.x2 < data2.x2 && data1.y1 < data2.y1 && data1.y4 > data2.y4)
+            }
+        })[0];
+        if (intersectionShape) {
+            let data2 = getAllShapePoint(intersectionShape);
+            if (selectedShape.getLength() > selectedShape.getWidth()) {
+                calculateSizeInIntersection(data2, data1, selectedShape, intersectionShape, true);
+            } else {
+                calculateSizeInIntersection(data1, data2, intersectionShape, selectedShape, false);
+            }
+        }
+    }
+}
+
+calculateSizeInIntersection = (data1, data2, shape1, shape2, gorizontal) => {
+    let expectAll = false;
+    let w1 = data1.x1 - data2.x1;
+    let w2 = data2.x2 - data1.x2;
+    let w3 = data2.y1 - data1.y1;
+    let w4 = data1.y4 - data2.y4;
+    if (expectAll) {
+        if (w1 < w2 && w1 < w3 && w1 < w4) {
+            shape1.length = w2 * scale;
+            shape1.setX(data1.x2)
+        } else if (w2 < w1 && w2 < w3 && w2 < w4) {
+            shape1.length = w1 * scale;
+        } else if (w3 < w1 && w3 < w2 && w3 < w4) {
+            shape2.width = w4 * scale;
+            shape2.setY(data2.y3);
+        } else if (w4 < w1 && w4 < w2 && w4 < w3) {
+            shape2.width = w3 * scale;
+        }
+    } else {
+        if (gorizontal) {
+            if (w1 < w2) {
+                shape1.length = w2 * scale;
+                shape1.setX(data1.x2)
+            } else {
+                shape1.length = w1 * scale;
+            }
+        } else {
+            if (w3 < w4) {
+                shape2.width = w4 * scale;
+                shape2.setY(data2.y3);
+            } else {
+                shape2.width = w3 * scale;
+            }
+        }
+    }
+};
 
 function handleMouseOut(e) {
     // return if we're not dragging
@@ -3655,7 +3810,7 @@ var mouse_wheel = function (event) {
     //запрещаем прокручивать страницу при изменении масштаба
     event.preventDefault();
 
-    if (false == !!event) event = window.event;
+    if (false === !!event) event = window.event;
     var direction = ((event.wheelDelta) ? event.wheelDelta / 120 : event.detail / -3) || false;
     if (direction && !!wheel_handle && typeof wheel_handle == "function") {
         wheel_handle(direction);
@@ -3676,7 +3831,9 @@ function handleMouseWheelUp(v) {
     scale += v > 0 ? .3 : -0.3;
     if (scale < 2) scale = 2;
     confirmAllShapes();
-    drawAll()
+    drawAll();
+    let elementById = document.getElementById('scale-span');
+    elementById.innerText = scale;
 }
 
 function confirmAllShapes() {
@@ -3691,9 +3848,6 @@ function getScaleValue(value) {
     let calcValue = value * defScaleValue / scale;
     return (calcValue > value) ? value : calcValue;
 }
-
-// clear the canvas and
-// redraw all shapes in their current positions
 
 function drawAll() {
 
@@ -3791,7 +3945,7 @@ function drawKarkasInner1({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, 
 }
 
 function drawKarkasInner2({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, w, h}) {
-    let karkasDepth1 = karkasDepth * defScaleValue / scale
+    let karkasDepth1 = karkasDepth * defScaleValue / scale;
     let x11 = x1 + karkasDepth1;
     let y11 = y1 + karkasDepth1 * y3dcefficient;
 
@@ -3807,7 +3961,7 @@ function drawKarkasInner2({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, 
 }
 
 function drawKarkasLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, colorBottomLine, bottomLineHeight, w, h}) {
-    let karkasDepth1 = karkasDepth * defScaleValue / scale
+    let karkasDepth1 = karkasDepth * defScaleValue / scale;
     draw3dLeft({
         name,
         x1: x1 + karkasDepth1,
@@ -3853,7 +4007,7 @@ function drawKarkasLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, co
 }
 
 function drawKarkasFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, colorBottomLine, bottomLineHeight, w, h}) {
-    let karkasDepth1 = karkasDepth * defScaleValue / scale
+    let karkasDepth1 = karkasDepth * defScaleValue / scale;
     draw3dFront({
         name,
         x1,
@@ -3880,7 +4034,7 @@ function drawKarkasFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, c
     ctx.closePath();
     ctx.restore();
 
-    draw3dFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, w, h})
+    draw3dFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, w, h});
     colorBottomLine && bottomLineHeight && !isNaN(bottomLineHeight) && draw3dFront({
         name,
         x1,
@@ -3961,7 +4115,6 @@ function draw3dPartition({name, x1, x2, x3, x4, y1, y2, y3, y4, w, h, h1, h2, co
             !!data3D.image ? drawLeftImage(data3D) : draw3dLeft(data3D);
         }
     });
-
 
     shapes.filter(isSerialized).filter(filterFrontDoor).map(parseDataTo3DCreate).forEach(item => item.image ? drawFrontImage(item) : draw3dRectangle(item));
     shapes.filter(isSerialized).filter(filterLeftDoor).map(parseDataTo3DCreate).forEach(item => item.image ? drawLeftImage(item) : draw3dRectangle(item));
@@ -4260,6 +4413,19 @@ function parseDataTo3DCreate(shape) {
     }
 }
 
+function getAllShapePoint(shape) {
+    return {
+        x1: shape.getX(),
+        y1: shape.getY(),
+        x2: shape.getX() + shape.getLength() / scale,
+        y2: shape.getY(),
+        x3: shape.getX() + shape.getLength() / scale,
+        y3: shape.getY() + shape.getWidth() / scale,
+        x4: shape.getX(),
+        y4: shape.getY() + shape.getWidth() / scale
+    }
+}
+
 getHeightPosition = shape => {
     if (shape.name === 'Window') {
         return (getWindowsSettingValue(shape.settingId, 'heightPosition') || 2100)
@@ -4392,6 +4558,7 @@ function kalkulatePrice(show) {
     let priceValue = [];
     let root = document.getElementById(rootDivId);
     removeElement('price-block');
+    removeElement('order-block');
     let priceDiv = createHtmlElement(HTML_ELEMENT.DIV, {id: 'price-block'});
 
     if (!show && !showPrice) {
@@ -4497,6 +4664,15 @@ function kalkulatePrice(show) {
         }));
         tBody.appendChild(tr);
     }
+
+    let send = createHtmlElement(HTML_ELEMENT.BUTTON, {text: titles['PUBLIC_ORDER_SEND'], style: 'margin-left: auto;margin-right: auto;display: block;'} );
+    send.addEventListener("click", function () {
+        orderSetting(root);
+    });
+    let orderDiv = createHtmlElement(HTML_ELEMENT.DIV, {id: 'order-block', style: 'padding-top: 10px'});
+    orderDiv.appendChild(send);
+    root.appendChild(orderDiv);
+
 }
 
 addRowPrice = (item, tBody, total) => {

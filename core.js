@@ -108,10 +108,13 @@ vagonka.crossOrigin = 'Anonymous';
 //---------------------- styles --------------------------//
 const TEXT_ALIGN_CENTER = 'text-align: center;';
 const CURSOR_POINTER = 'cursor: pointer;';
-const stylesCss = '.control-btn {height: 40px;width:50px;border: 1px solid black; border-radius: 5px; cursor: pointer; display: inline-flex; margin-right:5px};' +
-    '.control-btn img {height: 40px;border-radius: 5px; cursor: pointer};' +
+const stylesCss = '.link-scale {color: #0685f4; cursor:pointer} .link-scale:hover {color:#ff0606; text-decoration: underline}' +
+    '.control-btn {height: 40px;width:50px;border: 1px solid black; border-radius: 5px; cursor: pointer; display: inline-flex; margin-right:5px}' +
+    '.control-info-btn {height: 25px;width:35px;border: 1px solid black; border-radius: 5px; cursor: pointer; display: inline-flex; margin-right:5px}' +
     '.control-btn:hover{box-shadow: 0 5px 7px 4px #96def4;}' +
+    '.control-info-btn:hover{box-shadow: 0 5px 7px 4px #96def4;}' +
     '.control-btn:hover img{box-shadow: 0 0 2px 2px #96def4;}' +
+    '.control-info-btn:hover img{box-shadow: 0 0 2px 2px #96def4;}' +
     '.selectable-block:hover{box-shadow: 0 5px 7px 4px #96def4;}' +
     '.selectable-block{display: inline-block;margin: 0 15px 35px 0;vertical-align: top;width: 23%;border-radius: 20px;box-shadow: 0 5px 5px 3px #cecece;text-align: center;padding-bottom: 20px;cursor: pointer}';
 let css = document.createElement('style');
@@ -168,7 +171,7 @@ _addControlBtn = (div) => {
     buttonDiv.appendChild(span3);
     span3.appendChild(imgAddWindow);
 
-    let imgAddEllectro= createHtmlElement(HTML_ELEMENT.IMG, {
+    let imgAddEllectro = createHtmlElement(HTML_ELEMENT.IMG, {
         src: 'static/el.png', width: '50px', height: '40px',
         style: 'border-radius: 5px;',
         text: titles['PUBLIC_ADD_ELECTRIC'],
@@ -182,7 +185,7 @@ _addControlBtn = (div) => {
     buttonDiv.appendChild(span4);
     span4.appendChild(imgAddEllectro);
 
-    let img3D= createHtmlElement(HTML_ELEMENT.IMG, {
+    let img3D = createHtmlElement(HTML_ELEMENT.IMG, {
         id: '3d-view',
         src: 'static/3d.png', width: '50px', height: '40px',
         style: 'border-radius: 5px;',
@@ -198,8 +201,7 @@ _addControlBtn = (div) => {
     span5.appendChild(img3D);
 
 
-
-    let downloadBtn= createHtmlElement(HTML_ELEMENT.IMG, {
+    let downloadBtn = createHtmlElement(HTML_ELEMENT.IMG, {
         src: 'static/download.png', width: '50px',
         style: 'border-radius: 5px;',
         text: 'Скачать',
@@ -215,7 +217,7 @@ _addControlBtn = (div) => {
     buttonDiv.appendChild(span6);
     span6.appendChild(downloadBtn);
 
-    let send= createHtmlElement(HTML_ELEMENT.IMG, {
+    let send = createHtmlElement(HTML_ELEMENT.IMG, {
         src: 'static/calculate.png', width: '50px', height: '40px',
         style: 'border-radius: 5px;',
         text: titles['PUBLIC_ORDER_SEND'],
@@ -233,16 +235,225 @@ _addControlBtn = (div) => {
 
     let span8 = document.createElement("span");
     span8.setAttribute("style", 'float: right');
-    buttonDiv.appendChild(span8);
+
     let sp = createHtmlElement(HTML_ELEMENT.SPAN, {
         text: 'Масштаб: '
     });
     span8.appendChild(sp);
+    let plus = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/plus.png', width: '30px',
+        text: 'Увеличить масштаб',
+        onClick: function () {
+            handleMouseWheelUp(-1)
+        }
+    });
+    plus.setAttribute("alt", 'Увеличить масштаб');
+    plus.setAttribute("title", 'Увеличить масштаб');
+    let minus = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/minus.png', width: '30px',
+        style: 'border-radius: 5px;cursor:pointer',
+        text: 'Уменьшить масштаб',
+        onClick: function () {
+            handleMouseWheelUp(1)
+        }
+    });
+    plus.setAttribute("alt", 'Уменьшить масштаб');
+    plus.setAttribute("title", 'Уменьшить масштаб');
+
+    // let span9 = document.createElement("span");
+
+    span8.appendChild(plus);
+    // span8.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {text: 'Масштаб: 1px : '}));
+    // span8.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {id: 'scale-span', text: Math.round(scale * 100) / 100}));
+    // span8.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {text: 'мм'}));
+    span8.appendChild(minus);
     span8.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {
-        id: 'scale-span',
-        text: scale
+        text: 'Сброс',
+        onClick: changePositionAndScale,
+        classV: 'link-scale'
     }));
+
+    let hint = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: 'static/hint.png', width: '25px', height: '40px',
+        style: 'border: 1px solid black; border-radius: 50%;cursor: pointer',
+        text: 'Описание элементов управления',
+        onClick: showHint
+    });
+    hint.setAttribute("alt", 'Описание элементов управления');
+    hint.setAttribute("title", 'Описание элементов управления');
+
+    let span10 = document.createElement("span");
+    span10.setAttribute("id", 'hint-span');
+    span10.setAttribute("style", 'float: right; padding-left: 60px');
+    span10.appendChild(hint);
+    buttonDiv.appendChild(span10);
+    buttonDiv.appendChild(span8);
 };
+
+showHint = () => {
+    let elementById = document.getElementById("hint-span");
+    let exist = document.getElementById("hint-div");
+    if (exist) {
+        removeElement('hint-div');
+        return;
+    }
+    let hintArea = createHtmlElement(HTML_ELEMENT.DIV, {
+        id: 'hint-div',
+        style: 'position: absolute;\n' +
+            'z-index: 20;\n' +
+            'background-color:\n' +
+            'white;\n' +
+            'box-shadow: 0 0 2px 2px\n' +
+            '#96def4;\n' +
+            'width: 500px;\n' +
+            'height: 900px;\n' +
+            'margin-left: -510px;\n' +
+            'margin-top: -30px;'
+    });
+    let innerDiv = createHtmlElement(HTML_ELEMENT.DIV, {style: 'padding: 10px'});
+
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {
+        style: 'float: right; cursor: pointer',
+        html: '<img style="border-radius: 5px;" src="static/close.png" width="15px"/>',
+        onClick: () =>removeElement('hint-div')
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/partition2.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Кнопка используется для добавления межкомнатной перегородки</span>' +
+            '</div>'
+    }));
+
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/door-btn.jpg" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Кнопка используется для добавления новой входной двери</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/window-btn.jpg" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Кнопка используется для добавления нового окна</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/el.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Кнопка используется для добавления електрической точки </span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/3d.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Кнопка используется для просмотра 3D модели конструкции</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/2d.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Кнопка используется для отключения 3D модели</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/download.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Позволяет сохранить построенный чертеж или 3D модель</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn">' +
+            '<img style="border-radius: 5px;" src="static/calculate.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Отправить заявку на просчет стоимости</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 18%;">' +
+            '<img style="border-radius: 5px;" src="static/delete.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Позволяет удалить добавленные элементы. Элементы которые входят в базовую комплектацию удалению не подлежат. Отображается при наведении курсора на элемент</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 12%;">' +
+            '<img style="border-radius: 5px;" src="static/drag.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Позволяет переместить элемент зажав левую кнопку мыши. Отображается при наведении курсора на элемент.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 8%;">' +
+            '<img style="border-radius: 5px;" src="static/edit.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Замена элемента. Отображается при наведении курсора на элемент.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 15%;">' +
+            '<img style="border-radius: 5px;" src="static/changeSize.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Позволяет изменить длину перегородки, потянув зажав левую кнопку мыши. Отображается при наведении курсора на элемент.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 12%;">' +
+            '<img style="border-radius: 5px;" src="static/addDoor.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Добавление межкомнатной двери. Отображается при наведении курсора на межкомнатную перегородку.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 11%;">' +
+            '<img style="border-radius: 5px;" src="static/revert.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Повернуть на 90 градусов. Отображается при наведении курсора на межкомнатную перегородку.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 9%;">' +
+            '<img style="border-radius: 5px;" src="static/left-right.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Изменить тип двери (левая/правая). Отображается при наведении курсора на дверь.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 11%;">' +
+            '<img style="border-radius: 5px;" src="static/in-out.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Изменить тип двери (открывается внутрь/наружу). Отображается при наведении курсора на дверь.</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn" style="width: 8%;">' +
+            '<img style="border-radius: 5px;" src="static/minus.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Уменьшение масштаба, соответствует движению ролика мыши вниз</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span class="control-info-btn"  style="width: 8%;">' +
+            '<img style="border-radius: 5px;" src="static/plus.png" width="35px"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Увеличение масштаба, соответствует движению ролика мыши вверх</span>' +
+            '</div>'
+    }));
+    innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+        style: 'display: flex;padding: 3px;',
+        html: '<span   style="width: 8%;"></span>' +
+            '<span style="font-size: 13px;font-style: italic">Для перемещения всей конструкции используйте зажатый ролик или правую клавишу мыши</span>' +
+            '</div>'
+    }));
+
+    hintArea.appendChild(innerDiv);
+    elementById.appendChild(hintArea);
+}
 
 view3DBtnAction = () => {
     view3D = !view3D;
@@ -469,7 +680,7 @@ function changePositionAndScale() {
         let scaled3Dlength = length3D / scale;
         let scaled3DWidth = width3D / scale;
         let y3DTop = (canvas.height - scaled3DWidth) / 2;
-        let x3DLeft = ((canvas.width  - scaled3Dlength) / 3);
+        let x3DLeft = ((canvas.width - scaled3Dlength) / 3);
         karkas.setX(((cos7 * x3DLeft / sin41) - (sin7 * karkas.getLength() / scale) - y3DTop - getHeightPosition(karkas) / scale) / coeff3DX);
         karkas.setY((y3DTop + (sin7 * x3DLeft / cos7) + (sin7 * karkas.getLength() / scale) + getHeightPosition(karkas) / scale) / coeff3DY);
     } else {
@@ -481,8 +692,8 @@ function changePositionAndScale() {
         karkas.setY((canvas.height - karkas.width / scale) / 2);
     }
     drawAll();
-    let elementById = document.getElementById('scale-span');
-    elementById.innerText = scale;
+    // let elementById = document.getElementById('scale-span');
+    // elementById.innerText = Math.round(scale * 100) / 100;
 }
 
 setDeffWidthCanvas = (div) => {
@@ -994,7 +1205,7 @@ addWindow = (data) => {
 };
 
 initTextures = (baseConfig, isNew) => {
-    if(baseConfig) {
+    if (baseConfig) {
         textureFloor = initTexture(baseConfig.elements, 'TEXTURE_FLOOR', pol, isNew);
         textureInner = initTexture(baseConfig.elements, 'TEXTURE_INNER', vagonka, isNew);
         textureOuter = initTexture(baseConfig.elements, 'TEXTURE_OUTER', fon, isNew);
@@ -3635,7 +3846,7 @@ function updateIntersection() {
     if (selectedShape.name === 'Partition') {
         let data1 = getAllShapePoint(selectedShape);
         let intersectionShape = shapes.filter(i => {
-            if(i.id === selectedShape.id || i.name !== 'Partition' ){
+            if (i.id === selectedShape.id || i.name !== 'Partition') {
                 return false
             } else {
                 let data2 = getAllShapePoint(i);
@@ -3832,8 +4043,8 @@ function handleMouseWheelUp(v) {
     if (scale < 2) scale = 2;
     confirmAllShapes();
     drawAll();
-    let elementById = document.getElementById('scale-span');
-    elementById.innerText = scale;
+    // let elementById = document.getElementById('scale-span');
+    // elementById.innerText = Math.round(scale * 100) / 100;
 }
 
 function confirmAllShapes() {
@@ -4665,7 +4876,10 @@ function kalkulatePrice(show) {
         tBody.appendChild(tr);
     }
 
-    let send = createHtmlElement(HTML_ELEMENT.BUTTON, {text: titles['PUBLIC_ORDER_SEND'], style: 'margin-left: auto;margin-right: auto;display: block;'} );
+    let send = createHtmlElement(HTML_ELEMENT.BUTTON, {
+        text: titles['PUBLIC_ORDER_SEND'],
+        style: 'margin-left: auto;margin-right: auto;display: block;'
+    });
     send.addEventListener("click", function () {
         orderSetting(root);
     });

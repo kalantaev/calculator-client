@@ -47,6 +47,7 @@ let windowsEl = [];
 let doorsEl = [];
 let imageMap = new Map();
 let showPrice = true;
+let inCanvas;
 
 //----/ end properties /----//
 const price = {
@@ -3820,6 +3821,7 @@ function handleMouseDown(e) {
 }
 
 function handleMouseUp(e) {
+    inCanvas = true;
     allDraging = false;
     canvas.style.cursor = "default";
     // return if we're not dragging
@@ -3904,6 +3906,7 @@ calculateSizeInIntersection = (data1, data2, shape1, shape2, gorizontal) => {
 
 function handleMouseOut(e) {
     // return if we're not dragging
+    inCanvas = false;
     if (!isDragging) {
         return;
     }
@@ -3916,6 +3919,7 @@ function handleMouseOut(e) {
 
 function handleMouseMove(e) {
     //текущие координаты мыши
+    inCanvas = true;
     mouseX = parseInt(e.clientX - offsetX);
     mouseY = parseInt(e.clientY - offsetY);
     let has = false;// мышка находится на элементе с подсказкой
@@ -4038,13 +4042,14 @@ var set_handle = function (canvas, func) {
 };
 
 function handleMouseWheelUp(v) {
-
-    scale += v > 0 ? .3 : -0.3;
-    if (scale < 2) scale = 2;
-    confirmAllShapes();
-    drawAll();
-    // let elementById = document.getElementById('scale-span');
-    // elementById.innerText = Math.round(scale * 100) / 100;
+    if (inCanvas) {
+        scale += v > 0 ? .3 : -0.3;
+        if (scale < 2) scale = 2;
+        confirmAllShapes();
+        drawAll();
+        // let elementById = document.getElementById('scale-span');
+        // elementById.innerText = Math.round(scale * 100) / 100;
+    }
 }
 
 function confirmAllShapes() {

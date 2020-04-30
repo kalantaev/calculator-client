@@ -44,10 +44,12 @@ let titles = {};
 let selectOuterValue;
 let baseConfig = [];
 let windowsEl = [];
+let electroElements = [];
 let doorsEl = [];
 let imageMap = new Map();
 let showPrice = true;
 let inCanvas;
+let isBtn;
 
 //----/ end properties /----//
 const price = {
@@ -176,7 +178,7 @@ _addControlBtn = (div) => {
         src: 'static/el.png', width: '50px', height: '40px',
         style: 'border-radius: 5px;',
         text: titles['PUBLIC_ADD_ELECTRIC'],
-        onClick: addLight
+        onClick: /*addLight*/ /*addSocket*/ () => selectElectroElement(div)
     });
     imgAddEllectro.setAttribute("alt", titles['PUBLIC_ADD_ELECTRIC']);
     imgAddEllectro.setAttribute("title", titles['PUBLIC_ADD_ELECTRIC']);
@@ -244,7 +246,9 @@ _addControlBtn = (div) => {
     let plus = createHtmlElement(HTML_ELEMENT.IMG, {
         src: 'static/plus.png', width: '30px',
         text: 'Увеличить масштаб',
+        style: 'border-radius: 5px;cursor:pointer',
         onClick: function () {
+            isBtn = true;
             handleMouseWheelUp(-1)
         }
     });
@@ -255,6 +259,7 @@ _addControlBtn = (div) => {
         style: 'border-radius: 5px;cursor:pointer',
         text: 'Уменьшить масштаб',
         onClick: function () {
+            isBtn = true;
             handleMouseWheelUp(1)
         }
     });
@@ -316,7 +321,7 @@ showHint = () => {
     innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.SPAN, {
         style: 'float: right; cursor: pointer',
         html: '<img style="border-radius: 5px;" src="static/close.png" width="15px"/>',
-        onClick: () =>removeElement('hint-div')
+        onClick: () => removeElement('hint-div')
     }));
     innerDiv.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
         style: 'display: flex;padding: 3px;',
@@ -796,6 +801,37 @@ function createDivWindow(div, el, windowId) {
     div.appendChild(divWindow);
 }
 
+function createDivElectro(div, el, elementId) {
+    let divWindow = createHtmlElement(HTML_ELEMENT.SPAN, {
+        classV: 'selectable-block', onClick: () => {
+            if (elementId) {
+                let shapeById = getShapeById(elementId);
+                shapeById.price = shapeById.base && shapeById.initId === el.id ? undefined : el.price;
+                shapeById.hint = el.name;
+                shapeById.image3D = el.image3D;
+                shapeById.length = el.length;
+                shapeById.settingId = el.id;
+            } else {
+                if (el.elementType === 'LIGHT') {
+                    addLight(el);
+                } else if (el.elementType === 'SOCKET') {
+                    addSocket(el)
+                }
+            }
+            serialize();
+            removeElement('select-electro-screen');
+            drawAll()
+        }
+    });
+    if (el.imageSelect) {
+        let image = imageMap.get(el.imageSelect);
+        image.setAttribute('style', 'height: 150px;cursor: pointer')
+        divWindow.appendChild(image);
+    }
+    divWindow.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {html: windowNameTmpl(el)}));
+    div.appendChild(divWindow);
+}
+
 function createDivDoor(div, el, imgSrc, imgName, length, price, name, doorId, base, parentId, inner) {
     let divWindow = createHtmlElement(HTML_ELEMENT.SPAN, {
         classV: 'selectable-block', onClick: () => {
@@ -850,6 +886,35 @@ selectWindow = (root, windowId) => {
 
     windowsEl.forEach(item => {
         createDivWindow(div3, item, windowId);
+    });
+    div.appendChild(div2);
+    div.appendChild(div3);
+    root.appendChild(div);
+};
+
+selectElectroElement = (root, elementId) => {
+    let div = document.createElement("div");
+    div.setAttribute("id", "select-electro-screen");
+
+    let div2 = document.createElement("div");
+    div2.setAttribute("id", "full-screen-background");
+    div2.setAttribute("style", 'position: fixed;width: 100%;height: 100%;background-color:#040404cc;top: 0%;left: 0%;z-index:499');
+
+    let div3 = document.createElement("div");
+
+    div3.setAttribute("style", 'position: fixed;width: 60%;height: 86%;background-color:white;top: 7%;left: 20%;z-index:501; padding: 25px;');
+    div3.appendChild(createHtmlElement(HTML_ELEMENT.H4, {
+        style: TEXT_ALIGN_CENTER,
+        text: 'Выберете электрическую точку'
+    }));
+    div3.appendChild(createHtmlElement(HTML_ELEMENT.H4, {
+        style: 'float: right; margin-top: -50px; cursor: pointer',
+        text: 'х',
+        onClick: () => removeElement('select-electro-screen')
+    }));
+
+    electroElements.forEach(item => {
+        createDivElectro(div3, item, elementId);
     });
     div.appendChild(div2);
     div.appendChild(div3);
@@ -1099,6 +1164,7 @@ function initElement() {
     if (rs) {
         windowsEl = [];
         doorsEl = [];
+        electroElements = [];
         rs.forEach(el => {
             if (el.image3D) {
                 let img = new Image();
@@ -1118,6 +1184,10 @@ function initElement() {
                     break;
                 case "DOOR":
                     doorsEl.push(el);
+                    break;
+                case "LIGHT":
+                case "SOCKET":
+                    electroElements.push(el);
                     break;
             }
         })
@@ -1181,10 +1251,27 @@ addElement = () => {
     }
 };
 
-addLight = () => {
+addLight = (el) => {
     if (karkas) {
         confirmAllShapes();
-        new Light(karkas);
+        const defPartitionLength = (karkas.getLength() / 3);
+        var x = karkas.x + ((karkas.getLength() / 4) - (defPartitionLength / 2)) / scale;
+        var y = karkas.y - /*(parent.width /6) / scale*/ getScaleValue(40);
+        if (shapes.filter(item => item.name === 'Light' && item.x === x && item.y === y).length === 0) {
+            new Light(karkas, el);
+        }
+        drawAll();
+    }
+};
+addSocket = (el) => {
+    if (karkas) {
+        confirmAllShapes();
+        const defPartitionLength = (karkas.getLength() / 3);
+        var x = karkas.x + ((karkas.getLength() / 4) - (defPartitionLength / 2)) / scale;
+        var y = karkas.y - /*(parent.width /6) / scale*/ getScaleValue(40);
+        if (shapes.filter(item => item.name === 'Socket' && item.x === x && item.y === y).length === 0) {
+            new Socket(karkas, el);
+        }
         drawAll();
     }
 };
@@ -3232,29 +3319,20 @@ class Light extends Shape {
     nameRu = 'светильник';
     price = price.light;
 
-    constructor(parent) {
+    constructor(parent, el) {
         if (parent) {
-            var x = parent.x + (parent.getLength() / 4) / scale;
-            var y = parent.y + (parent.width / 2) / scale;
+            const defPartitionLength = (parent.getLength() / 3);
+            var x = parent.x + ((parent.getLength() / 4) - (defPartitionLength / 2)) / scale;
+            var y = parent.y - getScaleValue(40);
             super(x, y, 200, 200, colorGrey);
             this.parentId = parent.getId();
-            try {
-                this.positionRight = this.calculateShift(x, parent);
-            } catch (e) {
-                this.positionRight = ((x - parent.x) / (parent.getLength() / scale)) * 100 + Math.random() * 20;
-            }
+            this.price = el && el.price;
+            this.hint = el.name;
+            this.positionRight = ((x - parent.x) / (parent.getLength() / scale)) * 100;
             this.positionTop = ((y - parent.y) / (parent.width / scale)) * 100 - 5;
         } else {
             super()
         }
-    }
-
-    calculateShift(x, parent, shift) {
-        shift = shift || ((x - parent.x) / (parent.getLength() / scale)) * 100;
-        if (shapes.filter(item => item.name === 'Light').filter(item => Math.abs(item.positionRight - shift) < 5).length > 0) {
-            shift = this.calculateShift(x, parent, shift > 80 ? 1 : shift + 10)
-        }
-        return shift;
     }
 
     getX() {
@@ -3280,6 +3358,7 @@ class Light extends Shape {
     }
 
     setX(x) {
+        this.x = x;
         let parent = this.getParent();
         let thisLength = this.getLength() / scale;
         let karkasDepth1 = karkasDepth * defScaleValue / scale;
@@ -3299,6 +3378,7 @@ class Light extends Shape {
     }
 
     setY(y) {
+        this.y = y;
         let parent = this.getParent();
         let thisWidth = this.getWidth() / scale;
         let karkasDepth1 = karkasDepth * defScaleValue / scale;
@@ -3344,7 +3424,191 @@ class Light extends Shape {
 
         return this;
     };
+}
 
+class Socket extends Shape {
+
+    relatedShapes = [];
+    shift = 25;
+    position = POSITION.BOTTOM;
+    name = 'Socket';
+    nameRu = 'розетку';
+    price;
+
+    constructor(parent, data) {
+        if (parent) {
+            const defPartitionLength = (parent.getLength() / 3);
+            var x = parent.x + ((parent.getLength() / 4) - (defPartitionLength / 2)) / scale;
+            var y = parent.y - getScaleValue(40);
+            super(x, y, 12, 12, colorGrey);
+            this.shift = ((x - parent.getX()) / (parent.getLength() / scale)) * 100;
+            this.position = POSITION.BOTTOM;
+            this.parentId = parent.getId();
+            this.price = data.price;
+            this.hint = data.name;
+            this.grounding = data.grounding;
+            this.single = data.single;
+        } else {
+            super()
+        }
+    }
+
+    getLength() {
+        return this.length;
+    }
+
+    getWidth() {
+        return this.length;
+    }
+
+    getX() {
+        let parent = this.getParent();
+        if (!!parent) {
+            let parentLength = parent.getLength() / scale;
+            let parentWidth = parent.getWidth() / scale;
+            let parentX = parent.getX();
+            let shift = this.shift;
+
+            switch (this.position) {
+                case POSITION.TOP:
+                case POSITION.BOTTOM:
+                    return (shift / 100) * parentLength + parentX;
+                case POSITION.RIGHT:
+                    return parentX + parentLength - (karkasDepth * defScaleValue / scale);
+                case POSITION.LEFT:
+                    // if ((this.x  - parentX + (karkasDepth * defScaleValue / scale)) * scale > 300) {
+                    //     console.info(true)
+                    //     return this.x
+                    // }
+                    return parentX + (karkasDepth * defScaleValue / scale);
+            }
+        }
+    }
+
+    getY() {
+        let parent = this.getParent();
+        if (parent) {
+            let parentLength = parent.getLength() / scale;
+            let parentWidth = parent.getWidth() / scale;
+            let parentY = parent.getY();
+            let shift = this.shift;
+
+            switch (this.position) {
+                case POSITION.TOP:
+                    return parentY + (karkasDepth * defScaleValue / scale) + this.length * defScaleValue / scale;
+                case POSITION.BOTTOM:
+                    return parentY + parentWidth - (karkasDepth * defScaleValue / scale) - this.length * defScaleValue / scale;
+                case POSITION.RIGHT:
+                case POSITION.LEFT:
+                    return (shift / 100) * parentWidth + parentY;
+            }
+        }
+    }
+
+    setX(x) {
+        this.x = this.x + x - this.getX();
+        let parent = this.getParent();
+        if (parent) {
+            let parentX = parent.getX();
+            let parentLength = parent.getLength();
+            let parentWidth = parent.getWidth() / scale;
+            switch (this.position) {
+                case POSITION.TOP:
+                case POSITION.BOTTOM:
+                    if (parentX + karkasDepth < x && (parentX - karkasDepth + parentLength / scale) > (x + this.getLength() / scale)) {
+                        this.shift = ((x - parentX) / (parentLength / scale)) * 100
+                    } else if ((parentX + parentLength / scale) < mouseX) {
+                        this.shift = this.position === POSITION.TOP ? karkasDepth * 100 / parentWidth : ((parentWidth - karkasDepth - this.getLength() / scale) / parentWidth) * 100;
+                        let arrow = getShapeById(this.arrowsId[0]);
+                        arrow && (arrow.type = POSITION.RIGHT);
+                        this.position = POSITION.RIGHT;
+                    } else if (parentX > mouseX) {
+                        this.shift = this.position === POSITION.TOP ? karkasDepth * 100 / parentWidth : ((parentWidth - karkasDepth - this.getLength() / scale) / parentWidth) * 100;
+                        let arrow = getShapeById(this.arrowsId[0]);
+                        arrow && (arrow.type = POSITION.LEFT);
+                        this.position = POSITION.LEFT;
+                    }
+                    break;
+                case POSITION.RIGHT:
+                case POSITION.LEFT:
+            }
+        }
+    }
+
+    setY(y) {
+        this.y = y;
+        let parent = this.getParent();
+        if (parent) {
+            let parentY = parent.getY();
+            let parentLength = parent.getLength() / scale;
+            let parentWidth = parent.getWidth() / scale;
+
+            switch (this.position) {
+                case POSITION.TOP:
+                case POSITION.BOTTOM:
+                    break;
+                case POSITION.RIGHT:
+                case POSITION.LEFT:
+                    if (parentY + karkasDepth < y && (parentY - karkasDepth + parentWidth) > (y + this.width / scale)) {
+                        this.shift = ((y - parentY) / parentWidth) * 100
+                    } else if ((parentY + parentWidth) < mouseY) {
+                        let arrow = getShapeById(this.arrowsId[0]);
+                        arrow && (arrow.type = POSITION.BOTTOM);
+                        this.shift = this.position === POSITION.LEFT ? karkasDepth * 100 / parentLength : ((parentLength - karkasDepth - this.getWidth() / scale) / parentLength) * 100;
+                        this.position = POSITION.BOTTOM;
+                    } else if (parentY > mouseY) {
+                        this.shift = this.position === POSITION.LEFT ? karkasDepth * 100 / parentLength : ((parentLength - karkasDepth - this.getWidth() / scale) / parentLength) * 100;
+                        let arrow = getShapeById(this.arrowsId[0]);
+                        arrow && (arrow.type = POSITION.TOP);
+                        this.position = POSITION.TOP;
+                    }
+            }
+        }
+
+    }
+
+    confirm = () => {
+        this.fixed = true;
+        this.relatedShapes.forEach(item => shapes.filter(i => i.id === item)[0] && (shapes.filter(i => i.id === item)[0].deleted = true));
+        this.relatedShapes = [];
+    };
+
+    draw = function (ctx) {
+        let karkasDepth1 = karkasDepth * defScaleValue / scale;
+        if (!this.fixed && this.relatedShapes.length == 0) {
+            switch (this.position) {
+                case POSITION.BOTTOM:
+                case POSITION.TOP:
+                    this.relatedShapes.push(RelatedShape.createDeleteButton(this, -getScaleValue(7), -getScaleValue(20)));
+                    this.relatedShapes.push(RelatedShape.createDragElement(this, (this.getLength() / 2 / scale), karkasDepth));
+                    break;
+                case POSITION.RIGHT:
+                case POSITION.LEFT:
+                    this.relatedShapes.push(RelatedShape.createDeleteButton(this, getScaleValue(15), -getScaleValue(7)));
+                    this.relatedShapes.push(RelatedShape.createDragElement(this, karkasDepth / 2, (this.getWidth() / 2 / scale)));
+                    break;
+            }
+        }
+        //фигура
+        switch (this.position) {
+            case POSITION.BOTTOM:
+                drawSocketBottom(this.getX(), this.getY(), this.getLength() * defScaleValue / scale, this.getWidth() * defScaleValue / scale, this.grounding, this.single);
+                break;
+            case POSITION.TOP:
+                drawSocketTop(this.getX(), this.getY(), this.getLength() * defScaleValue / scale, this.getWidth() * defScaleValue / scale, this.grounding, this.single);
+                break;
+            case POSITION.LEFT:
+                drawSocketLeft(this.getX(), this.getY(), this.getLength() * defScaleValue / scale, this.getWidth() * defScaleValue / scale, this.grounding, this.single);
+                break;
+            case POSITION.RIGHT:
+                drawSocketRight(this.getX(), this.getY(), this.getLength() * defScaleValue / scale, this.getWidth() * defScaleValue / scale, this.grounding, this.single);
+                break;
+            default:
+                break;
+        }
+
+        return this;
+    };
 }
 
 class Karkas extends Rectangle {
@@ -3852,7 +4116,7 @@ function updateIntersection() {
                 return false
             } else {
                 let data2 = getAllShapePoint(i);
-                return data1.x1 < data2.x1 && data1.x2 > data2.x2 && data1.y1 > data2.y1 && data1.y4 < data2.y4 ||
+                return data1.x1 < data2.x2 && data1.x2 > data2.x1 && data1.y4 > data2.y1 && data1.y1 < data2.y4 ||
                     (data1.x1 > data2.x1 && data1.x2 < data2.x2 && data1.y1 < data2.y1 && data1.y4 > data2.y4)
             }
         })[0];
@@ -4042,11 +4306,12 @@ var set_handle = function (canvas, func) {
 };
 
 function handleMouseWheelUp(v) {
-    if (inCanvas) {
+    if (inCanvas || isBtn) {
         scale += v > 0 ? .3 : -0.3;
         if (scale < 2) scale = 2;
         confirmAllShapes();
         drawAll();
+        isBtn = false;
         // let elementById = document.getElementById('scale-span');
         // elementById.innerText = Math.round(scale * 100) / 100;
     }
@@ -4176,7 +4441,7 @@ function drawKarkasInner2({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, 
     draw3dBack({name, x1: x11, x2: x2 - (karkasDepth1), x3, x4, y1: y11, y2: y11, y3, y4, h1, h2, color, w, h})
 }
 
-function drawKarkasLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, colorBottomLine, bottomLineHeight, w, h}) {
+function drawKarkasLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, colorBottomLine, bottomLineHeight, colorLine, lineHeight, w, h}) {
     let karkasDepth1 = karkasDepth * defScaleValue / scale;
     draw3dLeft({
         name,
@@ -4204,6 +4469,17 @@ function drawKarkasLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, co
     ctx.closePath();
     ctx.restore();
     draw3dLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, w, h});
+
+    draw3dLeft({
+        name, x1, x2,
+        x3, x4, y1, y2, y3, y4: y1 + lineHeight * y3dcefficient / scale, h1, h2, color, w, h
+    }, colorLine, colorLine);
+
+    draw3dLeft({
+        name, x1, x2,
+        x3, x4, y1: y4 - lineHeight * y3dcefficient / scale, y2, y3, y4, h1, h2, color, w, h
+    }, colorLine, colorLine);
+
     colorBottomLine && bottomLineHeight && !isNaN(bottomLineHeight) && draw3dLeft({
         name,
         x1,
@@ -4222,7 +4498,7 @@ function drawKarkasLeft({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, co
     }, colorBottomLine, colorBottomLine)
 }
 
-function drawKarkasFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, colorBottomLine, bottomLineHeight, w, h}) {
+function drawKarkasFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, colorBottomLine, bottomLineHeight, colorLine, lineHeight, w, h}) {
     let karkasDepth1 = karkasDepth * defScaleValue / scale;
     draw3dFront({
         name,
@@ -4250,6 +4526,16 @@ function drawKarkasFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, c
     ctx.closePath();
     ctx.restore();
 
+
+    draw3dFront({
+        name, x1, x2,
+        x3: x4 + lineHeight / scale, x4, y1, y2, y3, y4, h1, h2, color: colorLine, w, h
+    }, colorLine);
+
+    draw3dFront({
+        name, x1, x2,
+        x3, x4: x3 - lineHeight / scale, y1, y2, y3, y4, h1, h2, color: colorLine, w, h
+    }, colorLine);
     draw3dFront({name, x1, x2, x3, x4, y1, y2, y3, y4, h1, h2, color, w, h});
     colorBottomLine && bottomLineHeight && !isNaN(bottomLineHeight) && draw3dFront({
         name,
@@ -4574,7 +4860,6 @@ function filterPartition(item) {
     return item.name === 'Partition'
 }
 
-
 function filterFrontWindow(item) {
     return item.name === 'Window' && (item.position === POSITION.BOTTOM)
 }
@@ -4622,6 +4907,8 @@ function parseDataTo3DCreate(shape) {
                     'rgb(205,128,0)' : 'rgba(0, 0, 0, 0)',
         colorBottomLine: shape.colorButtomLine,
         bottomLineHeight: shape.bottomLineHeight,
+        colorLine: /*'rgb(178,88,0)'*/ undefined,
+        lineHeight: undefined /*shape.bottomLineHeight*/,
         gorizontal: (shape.getLength() > shape.getWidth()),
         image: shape.image3D,
         shape: shape
@@ -4743,7 +5030,6 @@ function createSelectWall(dataToSelect, id) {
     });
     return htmlSelectElement;
 }
-
 
 function createSelect(dataToSelect, id, imageToCange) {
     let htmlSelectElement = document.createElement('select');
@@ -4931,7 +5217,7 @@ function getNameToPriceTable(item) {
         let length = (item.getLength() > item.getWidth()) ? round(item.getLength()) : round(item.getWidth());
         return `Перегородка межкомнатная ${length}мм`
     } else {
-        return item.nameRu
+        return item.hint
     }
 }
 
@@ -5015,6 +5301,11 @@ function createFromTemplate(data) {
                 assign5.id = obj.id;
                 newShape.push(assign5);
                 break;
+            case 'Socket':
+                let assign6 = Object.assign(new Socket(), obj);
+                assign6.id = obj.id;
+                newShape.push(assign6);
+                break;
         }
     });
     shapesMap = new Map();
@@ -5087,6 +5378,11 @@ function deserialize() {
                     let assign5 = Object.assign(new Light(), obj);
                     assign5.id = obj.id;
                     newShape.push(assign5);
+                    break;
+                case 'Socket':
+                    let assign6 = Object.assign(new Socket(), obj);
+                    assign6.id = obj.id;
+                    newShape.push(assign6);
                     break;
             }
         })
@@ -5325,6 +5621,102 @@ function drawGorizontalWindow(x, y, length, height) {
     ctx.moveTo(x + length, y);
     ctx.lineTo(x + length, y + height);
     ctx.strokeStyle = "rgb(0,0,255)";
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+}
+
+function drawSocketBottom(x, y, length, height, grounding, one) {
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y + height, length, Math.PI * 3, Math.PI * 2, false);
+    if (one) {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y - height * 0.7);
+    } else {
+        ctx.moveTo(x - height / 4, y);
+        ctx.lineTo(x - height / 4, y - height * 0.7);
+        ctx.moveTo(x + height / 4, y);
+        ctx.lineTo(x + height / 4, y - height * 0.7);
+    }
+    if (grounding) {
+        ctx.moveTo(x - height, y);
+        ctx.lineTo(x + height, y);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.41)";
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+}
+
+function drawSocketTop(x, y, length, height, grounding, one) {
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y - height, length, Math.PI * 2, Math.PI * 3, false);
+    if (one) {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + height * 0.7);
+    } else {
+        ctx.moveTo(x - height / 4, y);
+        ctx.lineTo(x - height / 4, y + height * 0.7);
+        ctx.moveTo(x + height / 4, y);
+        ctx.lineTo(x + height / 4, y + height * 0.7);
+    }
+    if (grounding) {
+        ctx.moveTo(x - height, y);
+        ctx.lineTo(x + height, y);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.41)";
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+}
+
+function drawSocketLeft(x, y, length, height, grounding, one) {
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, length, Math.PI * 1.5, Math.PI * 2.5, false);
+    if (one) {
+        ctx.moveTo(x + height, y);
+        ctx.lineTo(x + height + height * 0.7, y);
+    } else {
+        ctx.moveTo(x + height, y - height / 4);
+        ctx.lineTo(x + height + height * 0.7, y - height / 4);
+        ctx.moveTo(x + height, y + height / 4);
+        ctx.lineTo(x + height + height * 0.7, y + height / 4);
+    }
+    if (grounding) {
+        ctx.moveTo(x + height, y - height);
+        ctx.lineTo(x + height, y + height);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.41)";
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+}
+
+function drawSocketRight(x, y, length, height, grounding, one) {
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, length, Math.PI * 2.5, Math.PI * 1.5, false);
+    if (one) {
+        ctx.moveTo(x - height, y);
+        ctx.lineTo(x - height - height * 0.7, y);
+    } else {
+        ctx.moveTo(x - height, y - height / 4);
+        ctx.lineTo(x - height - height * 0.7, y - height / 4);
+        ctx.moveTo(x - height, y + height / 4);
+        ctx.lineTo(x - height - height * 0.7, y + height / 4);
+    }
+    if (grounding) {
+        ctx.moveTo(x - height, y - height);
+        ctx.lineTo(x - height, y + height);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.41)";
     ctx.stroke();
     ctx.closePath();
     ctx.restore();

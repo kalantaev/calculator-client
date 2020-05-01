@@ -45,6 +45,7 @@ let selectOuterValue;
 let baseConfig = [];
 let windowsEl = [];
 let electroElements = [];
+let plumbingElements = [];
 let doorsEl = [];
 let imageMap = new Map();
 let showPrice = true;
@@ -174,19 +175,8 @@ _addControlBtn = (div) => {
     buttonDiv.appendChild(span3);
     span3.appendChild(imgAddWindow);
 
-    let imgAddEllectro = createHtmlElement(HTML_ELEMENT.IMG, {
-        src: 'static/el.png', width: '50px', height: '40px',
-        style: 'border-radius: 5px;',
-        text: titles['PUBLIC_ADD_ELECTRIC'],
-        onClick: /*addLight*/ /*addSocket*/ () => selectElectroElement(div)
-    });
-    imgAddEllectro.setAttribute("alt", titles['PUBLIC_ADD_ELECTRIC']);
-    imgAddEllectro.setAttribute("title", titles['PUBLIC_ADD_ELECTRIC']);
-
-    let span4 = document.createElement("span");
-    span4.setAttribute("class", 'control-btn');
-    buttonDiv.appendChild(span4);
-    span4.appendChild(imgAddEllectro);
+    createButtonImgAddElement(div, buttonDiv, 'static/el.png', titles['PUBLIC_ADD_ELECTRIC'], 'Выберете Выберете электрическую точку', electroElements, createDivElectro);
+    createButtonImgAddElement(div, buttonDiv, 'static/plumbing.jpg', 'Добавить сантехнику', 'Выберете сантехнику', plumbingElements, createDivPlumbing);
 
     let img3D = createHtmlElement(HTML_ELEMENT.IMG, {
         id: '3d-view',
@@ -294,6 +284,22 @@ _addControlBtn = (div) => {
     span10.appendChild(hint);
     buttonDiv.appendChild(span10);
     buttonDiv.appendChild(span8);
+};
+
+createButtonImgAddElement = (root, btnDiv, img, textBtn, titlePopup, data, fnDivSelect) => {
+    let imgAdd = createHtmlElement(HTML_ELEMENT.IMG, {
+        src: img, width: '50px', height: '40px',
+        style: 'border-radius: 5px;',
+        text: textBtn,
+        onClick:  () => selectPopup(root, titlePopup, data, fnDivSelect)
+    });
+    imgAdd.setAttribute("alt", textBtn);
+    imgAdd.setAttribute("title", textBtn);
+
+    let span = document.createElement("span");
+    span.setAttribute("class", 'control-btn');
+    btnDiv.appendChild(span);
+    span.appendChild(imgAdd);
 };
 
 showHint = () => {
@@ -825,6 +831,33 @@ function createDivElectro(div, el, elementId) {
     });
     if (el.imageSelect) {
         let image = imageMap.get(el.imageSelect);
+        image.setAttribute('style', 'height: 150px;cursor: pointer');
+        divWindow.appendChild(image);
+    }
+    divWindow.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {html: windowNameTmpl(el)}));
+    div.appendChild(divWindow);
+}
+
+function createDivPlumbing(div, el, elementId) {
+    let divWindow = createHtmlElement(HTML_ELEMENT.SPAN, {
+        classV: 'selectable-block', onClick: () => {
+            if (elementId) {
+                let shapeById = getShapeById(elementId);
+                shapeById.price = shapeById.base && shapeById.initId === el.id ? undefined : el.price;
+                shapeById.hint = el.name;
+                shapeById.image3D = el.image3D;
+                shapeById.length = el.length;
+                shapeById.settingId = el.id;
+            } else {
+                addPlumping(el)
+            }
+            serialize();
+            removeElement('select-electro-screen');
+            drawAll()
+        }
+    });
+    if (el.imageSelect) {
+        let image = imageMap.get(el.imageSelect);
         image.setAttribute('style', 'height: 150px;cursor: pointer')
         divWindow.appendChild(image);
     }
@@ -892,7 +925,7 @@ selectWindow = (root, windowId) => {
     root.appendChild(div);
 };
 
-selectElectroElement = (root, elementId) => {
+selectPopup = (root, title, data, selectDivCb, elementId) => {
     let div = document.createElement("div");
     div.setAttribute("id", "select-electro-screen");
 
@@ -905,7 +938,7 @@ selectElectroElement = (root, elementId) => {
     div3.setAttribute("style", 'position: fixed;width: 60%;height: 86%;background-color:white;top: 7%;left: 20%;z-index:501; padding: 25px;');
     div3.appendChild(createHtmlElement(HTML_ELEMENT.H4, {
         style: TEXT_ALIGN_CENTER,
-        text: 'Выберете электрическую точку'
+        text: title
     }));
     div3.appendChild(createHtmlElement(HTML_ELEMENT.H4, {
         style: 'float: right; margin-top: -50px; cursor: pointer',
@@ -913,8 +946,8 @@ selectElectroElement = (root, elementId) => {
         onClick: () => removeElement('select-electro-screen')
     }));
 
-    electroElements.forEach(item => {
-        createDivElectro(div3, item, elementId);
+    data.forEach(item => {
+        selectDivCb(div3, item, elementId);
     });
     div.appendChild(div2);
     div.appendChild(div3);
@@ -1188,6 +1221,9 @@ function initElement() {
                 case "LIGHT":
                 case "SOCKET":
                     electroElements.push(el);
+                    break;
+                case "PLUMPING":
+                    plumbingElements.push(el);
                     break;
             }
         })
@@ -3611,6 +3647,175 @@ class Socket extends Shape {
     };
 }
 
+addPlumping = (el) => {
+    if (karkas) {
+        confirmAllShapes();
+        new Plumping(karkas, el);
+        drawAll();
+    }
+}
+
+class Plumping extends Rectangle {
+
+    positionTop;
+    positionRight;
+    name = 'Plumping';
+    nameRu = '';
+    price;
+    view = 1;
+    imageId;
+
+    constructor(parent, el) {
+        if (parent) {
+            const defPartitionLength = el.height;
+            var x = parent.x + ((parent.getLength() / 4) - (defPartitionLength / 2)) / scale;
+            var y = parent.y - /*(parent.width /6) / scale*/ getScaleValue(40);
+            super(x, y, defPartitionLength, el.length, baseColor);
+            this.parentId = parent.getId();
+            this.positionRight = ((x - parent.x) / (parent.getLength() / scale)) * 100;
+            this.positionTop = ((y - parent.y) / (parent.width / scale)) * 100;
+            this.price =el.price;
+            this.hint=el.name;
+            this.height = 2500;
+            this.imageId = el.image3D;
+            this.image = imageMap.get(el.image3D);
+        } else {
+            super()
+        }
+    }
+
+    getX() {
+        let parent = this.getParent();
+        if (parent) {
+            return (this.positionRight / 100) * parent.getLength() / scale + parent.x;
+        }
+    }
+
+    getX3D() {
+        return this.getX()
+    }
+
+    getY3D() {
+        let parent = this.getParent();
+        if (parent) {
+            return (this.positionTop / 100) * parent.width * y3dcefficient / scale + parent.y;
+        }
+    }
+
+    getY() {
+        let parent = this.getParent();
+        if (parent) {
+            return (this.positionTop / 100) * parent.width / scale + parent.y;
+        }
+    }
+
+    setX(x) {
+        this.x = x;
+        let parent = this.getParent();
+        let thisLength = this.getLength() / scale;
+        let karkasDepth1 = karkasDepth * defScaleValue / scale;
+        if (parent) {
+            if (parent.x + karkasDepth1 < x && (parent.x - karkasDepth1 + parent.getLength() / scale) > (x + thisLength)) {
+                this.positionRight = ((x - parent.x) / (parent.getLength() / scale)) * 100;
+            } else if (parent.x + karkasDepth1 >= x) {
+                this.positionRight = (karkasDepth1 / (parent.getLength() / scale)) * 100;
+            } else {
+                this.positionRight = (((parent.getLength() / scale) - karkasDepth1 - thisLength) / (parent.getLength() / scale)) * 100;
+            }
+            let magnetShapeX1 = magnetShapeX(this);
+            if (magnetShapeX1) {
+                this.setX(this.getX() + magnetShapeX1)
+            }
+        }
+    }
+
+    setY(y) {
+        this.y = y;
+        let parent = this.getParent();
+        let thisWidth = this.getWidth() / scale;
+        let karkasDepth1 = karkasDepth * defScaleValue / scale;
+        if (parent) {
+            if (parent.y + karkasDepth1 < y && (parent.y - karkasDepth1 + parent.width / scale) > (y + thisWidth)) {
+                this.positionTop = ((y - parent.y) / (parent.width / scale)) * 100;
+            } else if (parent.y + karkasDepth1 >= y) {
+                this.positionTop = (karkasDepth1 / (parent.width / scale)) * 100;
+            } else {
+                this.positionTop = (((parent.width / scale) - karkasDepth1 - thisWidth) / (parent.width / scale)) * 100;
+            }
+        }
+    }
+
+    draw = () => {
+        if (!this.fixed && this.relatedShapes.length == 0) {
+            let doors = this.getDoorsIfExist();
+            let width = this.getWidth() / scale;
+            let length = this.getLength() / scale;
+            let isGorizontal = length > width;
+            let scaleCoeff = defScaleValue / scale;
+            let val3 = (3 * scaleCoeff > 3) ? 3 : 3 * scaleCoeff;
+            let val34 = (34 * scaleCoeff > 34) ? 34 : 34 * scaleCoeff;
+            let val35 = (35 * scaleCoeff > 35) ? 35 : 35 * scaleCoeff;
+            let val30 = (30 * scaleCoeff > 30) ? 30 : 30 * scaleCoeff;
+            let needAddDoor = (isGorizontal ? (this.getLength() > doorLength) : (this.getWidth() > doorLength));
+
+            this.relatedShapes.push(RelatedShape.createDragElement(this, this.getLength() / 2 / scale, this.getWidth() / 2 / scale));
+            let shifts = [];
+            if (doors.length > 0) {
+                if (isGorizontal) {
+                    shifts = doors[0].opening === OPENING_TYPE.IN ? [{x: 3, y: 15}, {x: 35, y: 18}, {x: -25, y: 18}] :
+                        [{x: 3, y: undefined}, {x: 35, y: undefined}, {x: -25, y: -31}];
+                } else {
+                    shifts = doors[0].opening === OPENING_TYPE.IN ? [{x: 19, y: -15}, {x: 20, y: 19}, {
+                        x: 24,
+                        y: -45
+                    }] : [{x: -35, y: -15}, {x: -30, y: 19}, {x: -30, y: -45}];
+                }
+            } else {
+                shifts = isGorizontal ? [{x: 3, y: -34}, {x: 35, y: -30}, {x: -25, y: -31}] :
+                    [{x: 19, y: -15}, {x: 20, y: 19}, {x: 24, y: -45}];
+            }
+            this.relatedShapes.push(RelatedShape.createTurnButton(this,
+                getScaleValue(Math.abs(shifts[0].x)) * shifts[0].x / Math.abs(shifts[0].x),
+                !shifts[0].y ? undefined : getScaleValue(Math.abs(shifts[0].y)) * shifts[0].y / Math.abs(shifts[0].y)));
+            this.relatedShapes.push(RelatedShape.createDeleteButton(this,
+                getScaleValue(Math.abs(shifts[1].x)) * shifts[1].x / Math.abs(shifts[1].x),
+                !shifts[1].y ? undefined : getScaleValue(Math.abs(shifts[1].y)) * shifts[1].y / Math.abs(shifts[1].y)));
+            needAddDoor && this.relatedShapes.push(RelatedShape.createAddDoorButton(this,
+                getScaleValue(Math.abs(shifts[2].x)) * shifts[2].x / Math.abs(shifts[2].x),
+                !shifts[2].y ? undefined : getScaleValue(Math.abs(shifts[2].y)) * shifts[2].y / Math.abs(shifts[2].y)));
+        }
+        ctx.save();
+        if (this.view === 1) {
+            ctx.drawImage(this.image, this.getX(), this.getY(), this.length / scale, this.width / scale);
+
+        } else  if (this.view === 2) {
+            ctx.translate(this.getX() + this.length/scale, this.getY());
+            ctx.rotate(1.57);
+            ctx.drawImage(this.image, 0, 0, this.width/scale, this.length/scale);
+        } else if (this.view === 3)  {
+            ctx.translate(this.getX() + this.length/scale, this.getY() + this.width/scale);
+            ctx.rotate(3.15);
+            ctx.drawImage(this.image, 0, 0, this.length/scale, this.width/scale);
+        }else {
+            ctx.translate(this.getX(), this.getY() +  this.width/scale );
+            ctx.rotate(4.7);
+            ctx.drawImage(this.image, 0, 0, this.width/scale, this.length/scale);
+        }
+        ctx.restore();
+    };
+
+    turn = () => {
+        turnShape(this);
+        confirmAllShapes();
+       if(this.view === 3) {
+           this.view = 0;
+       } else {
+           this.view = this.view + 1
+       }
+    };
+
+}
+
 class Karkas extends Rectangle {
 
     name = 'Karkas';
@@ -5306,6 +5511,12 @@ function createFromTemplate(data) {
                 assign6.id = obj.id;
                 newShape.push(assign6);
                 break;
+            case 'Plumping':
+                let assign7 = Object.assign(new Plumping(), obj);
+                assign7.id = obj.id;
+                assign7.image = imageMap.get(obj.imageId)
+                newShape.push(assign7);
+                break;
         }
     });
     shapesMap = new Map();
@@ -5383,6 +5594,13 @@ function deserialize() {
                     let assign6 = Object.assign(new Socket(), obj);
                     assign6.id = obj.id;
                     newShape.push(assign6);
+                    break;
+                case 'Plumping':
+                    console.info(obj)
+                    let assign7 = Object.assign(new Plumping(), obj);
+                    assign7.id = obj.id;
+                    assign7.image = imageMap.get(obj.imageId)
+                    newShape.push(assign7);
                     break;
             }
         })

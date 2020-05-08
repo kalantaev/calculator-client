@@ -467,7 +467,7 @@ showHint = () => {
 
     hintArea.appendChild(innerDiv);
     elementById.appendChild(hintArea);
-}
+};
 
 view3DBtnAction = () => {
     view3D = !view3D;
@@ -982,8 +982,8 @@ selectDoor = (root, doorId, inner, parentId) => {
     root.appendChild(div);
 };
 
-let windowNameTmpl = (item) => `<br/><b>${item.name || ('Окно ' + item.length + 'x' + item.width + 'мм ')}<br/><span style="color: #0c7abf">${item.price} руб.</span></b>`;
-let doorNameTmpl = (name, prise) => `<br/><b>${name}<br/><span style="color: #0c7abf">${prise} руб.</span></b>`;
+let windowNameTmpl = (item) => `<br/><b>${item.name || ('Окно ' + item.length + 'x' + item.width + 'мм ')}<br/></b>`;
+let doorNameTmpl = (name, prise) => `<br/><b>${name}<br/></b>`/*<span style="color: #0c7abf">${prise} руб.</span>*/;
 
 setFullScreen = () => {
     lowScreen = false;
@@ -1098,10 +1098,12 @@ function divCreateNew(item) {
         text: item.name,
         style: TEXT_ALIGN_CENTER + 'padding-top:10px'
     }));
-    div.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
-        text: 'Цена: ' + item.price + 'руб.',
-        style: TEXT_ALIGN_CENTER
-    }));
+    if (showPrice) {
+        div.appendChild(createHtmlElement(HTML_ELEMENT.DIV, {
+            text: 'Цена: ' + item.price + 'руб.',
+            style: TEXT_ALIGN_CENTER
+        }));
+    }
     return div;
 }
 
@@ -1572,7 +1574,9 @@ class Shape {
     };
 
     confirm = () => {
-
+        this.fixed = true;
+        setDeleteAllShapeInArrId(this.relatedShapes);
+        this.relatedShapes = [];
     };
 
     turn = () => {
@@ -1580,7 +1584,12 @@ class Shape {
     };
 
     mirroring = () => {
+        this.direction = mirroringDoor(this.direction)
     };
+
+    changeOpen = () => {
+        this.opening = changeOpenDoor(this.arrowsId, this.opening);
+    }
 
     setDeleted() {
         shapes.filter(item => item.parentId === this.getId()).forEach(item => item.setDeleted());
@@ -1605,25 +1614,11 @@ class RelatedShape extends Shape {
         this._shiftY = _shiftY;
     }
 
-
-    /**
-     * used
-     * @see Rectangle
-     */
     static createTurnButton(shape, _shiftX, _shiftY) {
         let btn = new TurnButton(shape, _shiftX, _shiftY);
         return btn.getId();
     }
 
-    static createConfirmButton(shape, shiftX, shiftY) {
-        let btn = new ConfirmButton(shape, shiftX, shiftY);
-        return btn.getId();
-    }
-
-    /**
-     * used
-     * @see Rectangle
-     */
     static createDeleteButton(shape, shiftX, shiftY) {
         let btn = new DeleteButton(shape, shiftX, shiftY);
         return btn.getId();
@@ -1645,28 +1640,16 @@ class RelatedShape extends Shape {
         return btn.getId();
     }
 
-    /**
-     * used
-     * @see Door
-     */
     static createMirrorButton(shape, shiftX, shiftY) {
         let btn = new MirrorButton(shape, shiftX, shiftY);
         return btn.getId();
     }
 
-    /**
-     * used
-     * @see Rectangle
-     */
     static createAddDoorButton(shape, shiftX, shiftY) {
         let btn = new AddInnerDoorButton(shape, shiftX, shiftY);
         return btn.getId();
     }
 
-    /**
-     * used
-     * @see Door
-     */
     static createChangeOpenButton(shape, shiftX, shiftY) {
         let btn = new ChangeOpenTypeButton(shape, shiftX, shiftY);
         return btn.getId();
@@ -1686,6 +1669,22 @@ class RelatedShape extends Shape {
 
     setShiftY(value) {
         this._shiftY = value;
+    }
+
+    getX() {
+        let parent = this.getParent();
+        if (parent) {
+            let length = parent.getLength() / scale;
+            return parent.getX() + length / 2 + this.getShiftX();
+        }
+    }
+
+    getY() {
+        let parent = this.getParent();
+        if (parent) {
+            let width = parent.getWidth() / scale;
+            return parent.getY() + width / 2 + this.getShiftY()
+        }
     }
 }
 
@@ -1727,51 +1726,15 @@ class Door extends Shape {
     }
 
     getLength() {
-        switch (this.position) {
-            case POSITION.BOTTOM:
-            case POSITION.TOP:
-                return doorLength;
-            case POSITION.LEFT:
-            case POSITION.RIGHT:
-                return karkasDepth;
-        }
-        return doorLength;
+        return getLengthInDoor(this.position, karkasDepth, doorLength)
     }
 
     getWidth() {
-        switch (this.position) {
-            case POSITION.BOTTOM:
-            case POSITION.TOP:
-                return karkasDepth;
-            case POSITION.LEFT:
-            case POSITION.RIGHT:
-                return doorLength;
-        }
-        return karkasDepth;
+        return getLengthInDoor(this.position, doorLength,  karkasDepth )
     }
 
     getX() {
-        let parent = this.getParent();
-        if (parent) {
-            let parentLength = parent.getLength() / scale;
-            let parentWidth = parent.getWidth() / scale;
-            let parentX = parent.getX();
-            let shift = this.shift;
-
-            switch (this.position) {
-                case POSITION.TOP:
-                case POSITION.BOTTOM:
-                    return (shift / 100) * parentLength + parentX;
-                case POSITION.RIGHT:
-                    return parentX + parentLength - (karkasDepth * defScaleValue / scale);
-                case POSITION.LEFT:
-                    return parentX;
-            }
-        }
-    }
-
-    getX3D() {
-        return this.getX()
+        return getXInShapeOnKarkas(this.shift, this.position)
     }
 
     getY3D() {
@@ -1795,23 +1758,7 @@ class Door extends Shape {
     }
 
     getY() {
-        let parent = this.getParent();
-        if (parent) {
-            let parentLength = parent.getLength() / scale;
-            let parentWidth = parent.getWidth() / scale;
-            let parentY = parent.getY();
-            let shift = this.shift;
-
-            switch (this.position) {
-                case POSITION.TOP:
-                    return parentY;
-                case POSITION.BOTTOM:
-                    return parentY + parentWidth - (karkasDepth * defScaleValue / scale);
-                case POSITION.RIGHT:
-                case POSITION.LEFT:
-                    return (shift / 100) * parentWidth + parentY;
-            }
-        }
+        return getYInShapeOnKarkas(this.shift, this.position)
     }
 
     setX(x) {
@@ -1887,11 +1834,6 @@ class Door extends Shape {
         drawAll()
     }
 
-    confirm = () => {
-        this.fixed = true;
-        this.relatedShapes.forEach(item => shapes.filter(i => i.id === item)[0].deleted = true);
-        this.relatedShapes = [];
-    };
     edit = () => {
         selectDoor(document.getElementById(rootDivId), this.getId())
     };
@@ -1963,60 +1905,71 @@ class Door extends Shape {
 
         return this;
     };
+}
 
-    mirroring = () => {
-        switch (this.direction) {
-            case DIRECTION.LEFT:
-                this.direction = DIRECTION.RIGHT;
-                break;
-            case DIRECTION.RIGHT:
-                this.direction = DIRECTION.LEFT;
-        }
-    };
+getLengthInDoor = (position, depth, length) => {
+    switch (position) {
+        case POSITION.BOTTOM:
+        case POSITION.TOP:
+            return length;
+        case POSITION.LEFT:
+        case POSITION.RIGHT:
+            return depth;
+    }
+    return length;
+};
 
-    changeOpen = () => {
-        let arrow = getShapeById(this.arrowsId[0]);
-        switch (this.opening) {
-            case OPENING_TYPE.IN:
-                this.opening = OPENING_TYPE.OUT;
-                if (arrow) {
-                    switch (arrow.type) {
-                        case "BOTTOM":
-                            arrow.type = POSITION.TOP;
-                            break;
-                        case "TOP":
-                            arrow.type = POSITION.BOTTOM;
-                            break;
-                        case POSITION.LEFT:
-                            arrow.type = POSITION.RIGHT;
-                            break;
-                        case POSITION.RIGHT:
-                            arrow.type = POSITION.LEFT;
-                            break;
-                    }
-                }
-                break;
-            case OPENING_TYPE.OUT:
-                this.opening = OPENING_TYPE.IN;
-                if (arrow) {
-                    switch (arrow.type) {
-                        case "BOTTOM":
-                            arrow.type = POSITION.TOP;
-                            break;
-                        case "TOP":
-                            arrow.type = POSITION.BOTTOM;
-                            break;
-                        case POSITION.LEFT:
-                            arrow.type = POSITION.RIGHT;
-                            break;
-                        case POSITION.RIGHT:
-                            arrow.type = POSITION.LEFT;
-                            break;
-                    }
-                }
-        }
+mirroringDoor = (direction) => {
+    switch (direction) {
+        case DIRECTION.LEFT:
+            return  DIRECTION.RIGHT;
+        case DIRECTION.RIGHT:
+            return DIRECTION.LEFT;
     }
 }
+
+changeOpenDoor = (arrowsId, opening) => {
+    let arrow = getShapeById(arrowsId[0]);
+    switch (opening) {
+        case OPENING_TYPE.IN:
+            if (arrow) {
+                switch (arrow.type) {
+                    case "BOTTOM":
+                        arrow.type = POSITION.TOP;
+                        break;
+                    case "TOP":
+                        arrow.type = POSITION.BOTTOM;
+                        break;
+                    case POSITION.LEFT:
+                        arrow.type = POSITION.RIGHT;
+                        break;
+                    case POSITION.RIGHT:
+                        arrow.type = POSITION.LEFT;
+                        break;
+                }
+            }
+            return OPENING_TYPE.OUT;
+        case OPENING_TYPE.OUT:
+            if (arrow) {
+                switch (arrow.type) {
+                    case "BOTTOM":
+                        arrow.type = POSITION.TOP;
+                        break;
+                    case "TOP":
+                        arrow.type = POSITION.BOTTOM;
+                        break;
+                    case POSITION.LEFT:
+                        arrow.type = POSITION.RIGHT;
+                        break;
+                    case POSITION.RIGHT:
+                        arrow.type = POSITION.LEFT;
+                        break;
+                }
+            }
+            return OPENING_TYPE.IN;
+    }
+};
+
 
 class InnerDoor extends Shape {
 
@@ -2052,25 +2005,11 @@ class InnerDoor extends Shape {
     }
 
     getLength() {
-        switch (this.position) {
-            case POSITION.BOTTOM:
-            case POSITION.TOP:
-                return doorLength;
-            case POSITION.LEFT:
-            case POSITION.RIGHT:
-                return defPartitionWidth;
-        }
+        return getLengthInDoor(this.position, defPartitionWidth, doorLength);
     }
 
     getWidth() {
-        switch (this.position) {
-            case POSITION.BOTTOM:
-            case POSITION.TOP:
-                return defPartitionWidth;
-            case POSITION.LEFT:
-            case POSITION.RIGHT:
-                return doorLength;
-        }
+        return getLengthInDoor(this.position, doorLength, defPartitionWidth);
     }
 
     getX() {
@@ -2091,10 +2030,6 @@ class InnerDoor extends Shape {
                     return parentX;
             }
         }
-    }
-
-    getX3D() {
-        return this.getX()
     }
 
     getY3D() {
@@ -2184,12 +2119,6 @@ class InnerDoor extends Shape {
         drawAll()
     }
 
-    confirm = () => {
-        this.fixed = true;
-        this.relatedShapes.forEach(item => shapes.filter(i => i.id === item)[0].deleted = true);
-        this.relatedShapes = [];
-    };
-
     draw = function (ctx) {
         if (!this.fixed && this.relatedShapes.length == 0) {
             switch (this.position) {
@@ -2257,28 +2186,6 @@ class InnerDoor extends Shape {
         return this;
     };
 
-    mirroring = () => {
-        switch (this.direction) {
-            case DIRECTION.LEFT:
-                this.direction = DIRECTION.RIGHT;
-                break;
-            case DIRECTION.RIGHT:
-                this.direction = DIRECTION.LEFT;
-        }
-    };
-
-    changeOpen = () => {
-        let arrow = getShapeById(this.arrowsId[0]);
-        switch (this.opening) {
-            case OPENING_TYPE.IN:
-                this.opening = OPENING_TYPE.OUT;
-                arrow && (arrow.type = POSITION.TOP);
-                break;
-            case OPENING_TYPE.OUT:
-                this.opening = OPENING_TYPE.IN;
-                arrow && (arrow.type = POSITION.BOTTOM);
-        }
-    }
 }
 
 class Window extends Shape {
@@ -2319,51 +2226,15 @@ class Window extends Shape {
     }
 
     getLength() {
-        switch (this.position) {
-            case POSITION.BOTTOM:
-            case POSITION.TOP:
-                return this.length;
-            case POSITION.LEFT:
-            case POSITION.RIGHT:
-                return karkasDepth;
-        }
-        return this.length;
+        return getLengthInDoor(this.position, karkasDepth, doorLength)
     }
 
     getWidth() {
-        switch (this.position) {
-            case POSITION.BOTTOM:
-            case POSITION.TOP:
-                return karkasDepth;
-            case POSITION.LEFT:
-            case POSITION.RIGHT:
-                return this.length;
-        }
-        return karkasDepth;
+        return getLengthInDoor(this.position, doorLength,  karkasDepth )
     }
 
     getX() {
-        let parent = this.getParent();
-        if (!!parent) {
-            let parentLength = parent.getLength() / scale;
-            let parentWidth = parent.getWidth() / scale;
-            let parentX = parent.getX();
-            let shift = this.shift;
-
-            switch (this.position) {
-                case POSITION.TOP:
-                case POSITION.BOTTOM:
-                    return (shift / 100) * parentLength + parentX;
-                case POSITION.RIGHT:
-                    return parentX + parentLength - (karkasDepth * defScaleValue / scale);
-                case POSITION.LEFT:
-                    return parentX;
-            }
-        }
-    }
-
-    getX3D() {
-        return this.getX()
+        return getXInShapeOnKarkas(this.shift, this.position)
     }
 
     getY3D() {
@@ -2386,23 +2257,7 @@ class Window extends Shape {
     }
 
     getY() {
-        let parent = this.getParent();
-        if (parent) {
-            let parentLength = parent.getLength() / scale;
-            let parentWidth = parent.getWidth() / scale;
-            let parentY = parent.getY();
-            let shift = this.shift;
-
-            switch (this.position) {
-                case POSITION.TOP:
-                    return parentY;
-                case POSITION.BOTTOM:
-                    return parentY + parentWidth - (karkasDepth * defScaleValue / scale);
-                case POSITION.RIGHT:
-                case POSITION.LEFT:
-                    return (shift / 100) * parentWidth + parentY;
-            }
-        }
+        return getYInShapeOnKarkas(this.shift, this.position)
     }
 
     setX(x) {
@@ -2465,12 +2320,6 @@ class Window extends Shape {
 
     }
 
-    confirm = () => {
-        this.fixed = true;
-        this.relatedShapes.forEach(item => shapes.filter(i => i.id === item)[0] && (shapes.filter(i => i.id === item)[0].deleted = true));
-        this.relatedShapes = [];
-    };
-
     draw = function (ctx) {
         let karkasDepth1 = karkasDepth * defScaleValue / scale;
         if (!this.fixed && this.relatedShapes.length == 0) {
@@ -2511,6 +2360,43 @@ class Window extends Shape {
     };
 }
 
+
+getXInShapeOnKarkas = (shift, position) => {
+    let parent = karkas;
+    if (parent) {
+        let parentLength = parent.getLength() / scale;
+        let parentWidth = parent.getWidth() / scale;
+        let parentX = parent.getX();
+        switch (position) {
+            case POSITION.TOP:
+            case POSITION.BOTTOM:
+                return (shift / 100) * parentLength + parentX;
+            case POSITION.RIGHT:
+                return parentX + parentLength - (karkasDepth * defScaleValue / scale);
+            case POSITION.LEFT:
+                return parentX;
+        }
+    }
+};
+
+getYInShapeOnKarkas = (shift, position) => {
+    let parent = karkas;
+    if (parent) {
+        let parentLength = parent.getLength() / scale;
+        let parentWidth = parent.getWidth() / scale;
+        let parentY = parent.getY();
+        switch (position) {
+            case POSITION.TOP:
+                return parentY;
+            case POSITION.BOTTOM:
+                return parentY + parentWidth - (karkasDepth * defScaleValue / scale);
+            case POSITION.RIGHT:
+            case POSITION.LEFT:
+                return (shift / 100) * parentWidth + parentY;
+        }
+    }
+};
+
 /**
  * Фигура для поворота фигуры, круглая стрелка
  */
@@ -2539,30 +2425,7 @@ class TurnButton extends RelatedShape {
         return getScaleValue(20);
     }
 
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            let length = parent.getLength() / scale;
-            return parent.getX() + length / 2 + this.getShiftX();
-        }
-    }
-
-    getY() {
-        let parent = this.getParent();
-        if (parent) {
-            let width = parent.getWidth() / scale;
-            return parent.getY() + width / 2 + this.getShiftY()
-        }
-    }
-
     draw = function (ctx) {
-        // // раскоментировать для отображения области
-        // ctx.beginPath();
-        // ctx.rect(this.getX(), this.getY(), this.getLength(), this.getWidth());
-        // ctx.strokeStyle = 'rgba(0,0,0,0.23)';
-        // ctx.stroke();
-        // ctx.closePath();
-
         let value10 = getScaleValue(8);
         let value3 = getScaleValue(2);
         let value7 = getScaleValue(7);
@@ -2604,64 +2467,6 @@ class TurnButton extends RelatedShape {
 /**
  * Кнопка для подтверждения, галка
  */
-class ConfirmButton extends RelatedShape {
-
-    name = 'ConfirmButton';
-    hint = "Закрепить элемент";
-
-    constructor(shape, shiftX, shiftY) {
-        if (!shiftX) shiftX = -10;
-        if (!shiftY) shiftY = -30;
-        super(shape, shiftX, shiftY);
-        this.hint = `Закрепить ${shape.nameRu !== undefined ? shape.nameRu : 'элемент'}`;
-        this.color = colorRed
-    }
-
-    getLength() {
-        return 25;
-    }
-
-    getWidth() {
-        return 20;
-    }
-
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getX() + (parent.getLength() / 2 / scale) + this.getShiftX();
-        }
-    }
-
-    getY() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getY() + this.getShiftY()
-        }
-    }
-
-
-    draw = function (ctx) {
-        ctx.beginPath();
-        ctx.moveTo(this.getX() + 10, this.getY() + 20);
-        ctx.lineTo(this.getX(), this.getY() + 10);
-        ctx.moveTo(this.getX() + 10, this.getY() + 20);
-        ctx.lineTo(this.getX() + 25, this.getY());
-        ctx.strokeStyle = this.color;
-        ctx.stroke();
-        ctx.closePath();
-    };
-
-    onClick = () => {
-        let parent = this.getParent();
-        parent && parent.confirm && parent.confirm();
-        serialize();
-        drawAll();
-    }
-}
-
-/**
- * Кнопка для подтверждения, галка
- */
 class DeleteButton extends RelatedShape {
 
     name = 'DeleteButton';
@@ -2681,20 +2486,6 @@ class DeleteButton extends RelatedShape {
 
     getWidth() {
         return getScaleValue(14);
-    }
-
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getX() + (parent.getLength() / 2 / scale) + this.getShiftX();
-        }
-    }
-
-    getY() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getY() + (parent.getWidth() / 2 / scale) + this.getShiftY()
-        }
     }
 
     draw = function (ctx) {
@@ -2739,20 +2530,6 @@ class EditButton extends RelatedShape {
         return getScaleValue(18);
     }
 
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getX() + (parent.getLength() / 2 / scale) + this.getShiftX();
-        }
-    }
-
-    getY() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getY() + (parent.getWidth() / 2 / scale) + this.getShiftY()
-        }
-    }
-
     draw = function (ctx) {
         ctx.drawImage(pencil, this.getX(), this.getY(), this.getLength(), this.getWidth());
     };
@@ -2786,13 +2563,6 @@ class MirrorButton extends RelatedShape {
 
     getWidth() {
         return getScaleValue(15);
-    }
-
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getX() + (parent.getLength() / 2 / scale) + this.getShiftX();
-        }
     }
 
     getY() {
@@ -2841,20 +2611,6 @@ class AddInnerDoorButton extends RelatedShape {
         return getScaleValue(16);
     }
 
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getX() + (parent.getLength() / 2 / scale) + this.getShiftX();
-        }
-    }
-
-    getY() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getY() + (parent.getWidth() / 2 / scale) + this.getShiftY()
-        }
-    }
-
     draw = function (ctx) {
         ctx.beginPath();
         drawAddDoor(ctx, this.getX(), this.getY(), this.getLength(), this.getWidth());
@@ -2892,13 +2648,6 @@ class ChangeOpenTypeButton extends RelatedShape {
 
     getWidth() {
         return getScaleValue(15);
-    }
-
-    getX() {
-        let parent = this.getParent();
-        if (parent) {
-            return parent.getX() + (parent.getLength() / 2 / scale) + this.getShiftX();
-        }
     }
 
     getY() {
@@ -3108,12 +2857,6 @@ class Rectangle extends Shape {
         this.price = price;
     }
 
-    confirm = () => {
-        this.fixed = true;
-        setDeleteAllShapeInArrId(this.relatedShapes)
-        this.relatedShapes = [];
-    };
-
     draw = function (ctx) {
         if (!this.fixed && this.relatedShapes.length == 0) {
             let doors = this.getDoorsIfExist();
@@ -3217,10 +2960,6 @@ class Partition extends Rectangle {
         if (parent) {
             return (this.positionRight / 100) * parent.getLength() / scale + parent.x;
         }
-    }
-
-    getX3D() {
-        return this.getX()
     }
 
     getY3D() {
@@ -3421,11 +3160,6 @@ class Light extends Shape {
         }
     }
 
-    confirm = () => {
-        this.fixed = true;
-        setDeleteAllShapeInArrId(this.relatedShapes);
-        this.relatedShapes = [];
-    };
 
     draw = function (ctx) {
         if (!this.fixed && this.relatedShapes.length == 0) {
@@ -3528,11 +3262,6 @@ class Socket extends Shape {
         }
     }
 
-    confirm = () => {
-        this.fixed = true;
-        this.relatedShapes.forEach(item => shapes.filter(i => i.id === item)[0] && (shapes.filter(i => i.id === item)[0].deleted = true));
-        this.relatedShapes = [];
-    };
 
     draw = function (ctx) {
         let karkasDepth1 = karkasDepth * defScaleValue / scale;
@@ -3639,17 +3368,6 @@ class Plumping extends Rectangle {
         let parent = this.getParent();
         if (parent) {
             return (this.positionRight / 100) * parent.getLength() / scale + parent.x;
-        }
-    }
-
-    getX3D() {
-        return this.getX()
-    }
-
-    getY3D() {
-        let parent = this.getParent();
-        if (parent) {
-            return (this.positionTop / 100) * parent.width * y3dcefficient / scale + parent.y;
         }
     }
 
@@ -3777,7 +3495,8 @@ class Karkas extends Rectangle {
             this.color = baseColor;
             this.height = 2500;
             this.colorButtomLine = setting.colorButtomLine;
-            this.bottomLineHeight = setting.bottomLineHeight
+            this.bottomLineHeight = setting.bottomLineHeight;
+            // this.zone = [{w: 2000, h: 1000, x: 2000, y: 1400 }]
         } else {
             super();
         }
@@ -3816,53 +3535,55 @@ class Karkas extends Rectangle {
 
     draw = function (ctx) {
 
-        let karkasDepth1 = karkasDepth * defScaleValue / scale;
+        drawKarkas2D(this.getX(), this.getY(), (this.getLength()) / scale, this.getWidth() / scale, this.color);
 
-      // console.info(karkas.getLength()%2400,karkas.getWidth()%2400,karkas.getLength()%6000,karkas.getWidth()%6000 );
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(this.getX(), this.getY(), (this.getLength()) / scale, this.getWidth() / scale);
-        ctx.rect(this.getX() + karkasDepth1, this.getY() + karkasDepth1, ((this.getLength()) / scale) - karkasDepth1 * 2, (this.getWidth() / scale) - karkasDepth1 * 2);
-        ctx.lineWidth = 1.2;
-        ctx.strokeStyle = this.color;
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
-        ctx.save();
-        ctx.beginPath();
-        //верхняя пунктирная
-        ctx.moveTo(this.getX() - 35, this.getY() + karkasDepth1 / 2);
-        ctx.lineTo(this.getX() + (this.getLength() / scale) + 35, this.getY() + karkasDepth1 / 2);
-        //нижняя пунктирная
-        ctx.moveTo(this.getX() - 35, this.getY() + this.getWidth() / scale - karkasDepth1 + karkasDepth1 / 2);
-        ctx.lineTo(this.getX() + (this.getLength() / scale) + 35, this.getY() + this.getWidth() / scale - karkasDepth1 + karkasDepth1 / 2);
-        //левая пунктирная
-        ctx.moveTo(this.getX() + karkasDepth1 / 2, this.getY() - 35);
-        ctx.lineTo(this.getX() + karkasDepth1 / 2, this.getY() + (this.getWidth() / scale) + 35);
-        //правая пунктирная
-        ctx.moveTo(this.getX() + this.getLength() / scale - karkasDepth1 + karkasDepth1 / 2, this.getY() - 35);
-        ctx.lineTo(this.getX() + this.getLength() / scale - karkasDepth1 + karkasDepth1 / 2, this.getY() + (this.getWidth() / scale) + 35);
-        // ctx.lineWidth = 0.9;
-        ctx.setLineDash([45, 25]);
-        ctx.strokeStyle = "rgba(255,120,0,0.8)";
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
+        // this.zone.forEach(i=> {
+        //     drawKarkas2D(this.getX() + i.x / scale, this.getY() + i.y / scale, i.w / scale, i.h / scale, this.color);
+        // })
         return this;
     };
-
-    getX3D() {
-        return this.getX()
-    }
-
-    getY3D() {
-        return this.getY()
-    }
 
     static from(json) {
         return Object.assign(new Karkas(), json);
     }
+}
+
+function drawKarkas2D(x, y, length, width, color) {
+
+    let karkasDepth1 = karkasDepth * defScaleValue / scale;
+
+    // console.info(karkas.getLength()%2400,karkas.getWidth()%2400,karkas.getLength()%6000,karkas.getWidth()%6000 );
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, length, width);
+    ctx.rect(x + karkasDepth1, y + karkasDepth1, length - karkasDepth1 * 2, width - karkasDepth1 * 2);
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    //верхняя пунктирная
+    ctx.moveTo(x - 35, y + karkasDepth1 / 2);
+    ctx.lineTo(x + (length) + 35, y + karkasDepth1 / 2);
+    //нижняя пунктирная
+    ctx.moveTo(x - 35, y + width - karkasDepth1 + karkasDepth1 / 2);
+    ctx.lineTo(x + (length) + 35, y + width - karkasDepth1 + karkasDepth1 / 2);
+    //левая пунктирная
+    ctx.moveTo(x + karkasDepth1 / 2, y - 35);
+    ctx.lineTo(x + karkasDepth1 / 2, y + width + 35);
+    //правая пунктирная
+    ctx.moveTo(x + length - karkasDepth1 + karkasDepth1 / 2, y - 35);
+    ctx.lineTo(x + length - karkasDepth1 + karkasDepth1 / 2, y + width + 35);
+    // ctx.lineWidth = 0.9;
+    ctx.setLineDash([45, 25]);
+    ctx.strokeStyle = "rgba(255,120,0,0.8)";
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+
 }
 
 class ChangeSizeElement extends RelatedShape {
@@ -6002,15 +5723,16 @@ function round(number, digit = 0) {
     return 0;
 }
 
-const templates = [
-    {
-        name: 'СБ1-6',
-        img: 'https://xn--90acsfcjpnu1gc.xn--p1ai/wp-content/uploads/2020/02/sb1-7ch1.png',
-        data: '[{"id":"04fb0573-bc29-4cbd-9f08-d297851b9e74","x":100,"y":70,"width":6000,"height":2400,"color":"rgb(0,0,255)","notDragable":true,"fixed":true,"name":"Karkas","arrowsId":["297d6d4e-d71f-4606-b76d-030dbfa598a8","addd1d78-c2c7-43cf-b986-a47877fedef9"],"relatedShapes":[],"price":80000,"nameRu":"Каркас"},{"id":"297d6d4e-d71f-4606-b76d-030dbfa598a8","x":100,"y":20,"width":6000,"color":"rgba(0,0,0,0.41)","text":"6000 мм","notDragable":true,"fixed":true,"name":"Arrow","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":[],"type":"TOP","relatedShapes":[]},{"id":"addd1d78-c2c7-43cf-b986-a47877fedef9","x":100,"y":120,"width":2400,"color":"rgba(0,0,0,0.41)","text":"2400 мм","notDragable":true,"fixed":true,"name":"Arrow","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":[],"type":"LEFT","relatedShapes":[]},{"id":"fda3c3dd-88b6-4712-ba3b-d5af5b3cbbb5","x":409.5238095238095,"y":347.3809523809524,"width":800,"height":8.333333333333332,"color":"rgba(0, 0, 0)","notDragable":false,"fixed":true,"name":"Door","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":["eddf9701-dd72-43c9-aaf0-474eaa76ad85"],"relatedShapes":[],"shift":43.52999973333346,"position":"BOTTOM","direction":"RIGHT","opening":"OUT","nameRu":"дверь","price":5000},{"id":"eddf9701-dd72-43c9-aaf0-474eaa76ad85","x":409.5238095238095,"y":297.3809523809524,"width":800,"color":"rgba(0,0,0,0.41)","notDragable":true,"fixed":true,"name":"Arrow","parentId":"fda3c3dd-88b6-4712-ba3b-d5af5b3cbbb5","arrowsId":[],"type":"TOP","relatedShapes":[]},{"id":"4d364167-19ba-4e16-ad5c-bad41a63756c","x":338.0952380952381,"y":212.85714285714286,"width":50,"height":2252.000000000001,"color":"rgb(0,0,255)","notDragable":false,"fixed":true,"name":"Partition","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":[],"relatedShapes":[],"doorId":"d0f7fda3-95d0-4421-9fa0-00367e3ad6dc","price":11260,"positionTop":2.916666666666666,"positionRight":36.889999533333345,"nameRu":"перегородку"},{"id":"5c437363-9193-48be-8539-c9821ceaa6b5","x":338.0952380952381,"y":212.85714285714286,"width":50,"height":2260.4000000000015,"color":"rgb(0,0,255)","notDragable":false,"fixed":true,"name":"Partition","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":[],"relatedShapes":[],"doorId":"2060ca14-8825-4392-a813-cb43b0fb47c7","price":11302,"positionTop":2.900000000000017,"positionRight":62.88333333333338,"nameRu":"перегородку"},{"id":"d0f7fda3-95d0-4421-9fa0-00367e3ad6dc","x":291.96428571428567,"y":472.6190476190477,"width":800,"height":50,"color":"rgba(0, 0, 0)","notDragable":false,"fixed":true,"name":"InnerDoor","parentId":"4d364167-19ba-4e16-ad5c-bad41a63756c","arrowsId":[],"relatedShapes":[],"shift":50,"direction":"LEFT","opening":"IN","position":"RIGHT","nameRu":"дверь"},{"id":"2060ca14-8825-4392-a813-cb43b0fb47c7","x":291.96428571428567,"y":473.61904761904776,"width":800,"height":50,"color":"rgba(0, 0, 0)","notDragable":false,"fixed":true,"name":"InnerDoor","parentId":"5c437363-9193-48be-8539-c9821ceaa6b5","arrowsId":[],"relatedShapes":[],"shift":50,"direction":"RIGHT","opening":"OUT","position":"RIGHT","nameRu":"дверь"},{"id":"d30a4972-e670-45a4-8cab-4143807c3869","x":213.09523809523807,"y":347.3809523809524,"width":800,"height":8.333333333333332,"color":"rgba(0, 0, 0)","notDragable":false,"fixed":true,"name":"Window","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":["e7fa9af8-5b63-4404-bc63-ec4707ddf405"],"relatedShapes":[],"shift":11.07333333333333,"position":"BOTTOM","nameRu":"окно","price":5000},{"id":"e7fa9af8-5b63-4404-bc63-ec4707ddf405","x":213.09523809523807,"y":397.3809523809524,"width":800,"color":"rgba(0,0,0,0.41)","notDragable":true,"fixed":true,"name":"Arrow","parentId":"d30a4972-e670-45a4-8cab-4143807c3869","arrowsId":[],"type":"BOTTOM","relatedShapes":[]},{"id":"4c08018c-4f7f-417e-9d00-949ff0f237bd","x":213.09523809523807,"y":347.3809523809524,"width":800,"height":8.333333333333332,"color":"rgba(0, 0, 0)","notDragable":false,"fixed":true,"name":"Window","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":["a612ebb3-326b-4d7b-8a22-b612d811f5fd"],"relatedShapes":[],"shift":75.31333333333352,"position":"BOTTOM","nameRu":"окно","price":5000},{"id":"a612ebb3-326b-4d7b-8a22-b612d811f5fd","x":405.9523809523809,"y":397.3809523809524,"width":800,"color":"rgba(0,0,0,0.41)","notDragable":true,"fixed":true,"name":"Arrow","parentId":"4c08018c-4f7f-417e-9d00-949ff0f237bd","arrowsId":[],"type":"BOTTOM","relatedShapes":[]},{"id":"339bfc35-5835-4867-a5dd-1d4264ca1d3a","x":278.57142857142856,"y":212.85714285714286,"width":200,"height":200,"color":"rgba(0,0,0,0.41)","notDragable":false,"fixed":true,"name":"Light","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":[],"relatedShapes":[],"positionTop":45.699999999999974,"positionRight":16.173333200000002,"nameRu":"светильник","price":500},{"id":"8b8935bd-7c6b-49fc-9476-d39c1eac3546","x":278.57142857142856,"y":212.85714285714286,"width":200,"height":200,"color":"rgba(0,0,0,0.41)","notDragable":false,"fixed":true,"name":"Light","parentId":"04fb0573-bc29-4cbd-9f08-d297851b9e74","arrowsId":[],"relatedShapes":[],"positionTop":45.69999999999985,"positionRight":80.27333280000012,"nameRu":"светильник","price":500}]'
-    }];
+const templates = [];
 
 document.getElementsByTagName("head")[0].appendChild(css);
 requests.get('/base-config').then(rs => {
     baseConfig = rs;
 });
 initElement();
+
+let data = [{x: 0, y: 0, w: 40, h: 100}, {x: 40, y: 0, w: 70, h: 40}, {x: 140, y: 0, w: 40, h: 100}];
+
+function canMove({x, y, w, h}, data) {
+
+}

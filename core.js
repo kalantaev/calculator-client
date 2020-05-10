@@ -293,7 +293,7 @@ createButtonImgAddElement = (root, btnDiv, img, textBtn, titlePopup, data, fnDiv
         src: img, width: '50px', height: '40px',
         style: 'border-radius: 5px;',
         text: textBtn,
-        onClick:  () => selectPopup(root, titlePopup, data, fnDivSelect)
+        onClick: () => selectPopup(root, titlePopup, data, fnDivSelect)
     });
     imgAdd.setAttribute("alt", textBtn);
     imgAdd.setAttribute("title", textBtn);
@@ -665,6 +665,7 @@ function sendByteArray(blob, data, first) {
                     requests.post('/order', {imgId: [id1, id], ...data})
                 }
             } catch (e) {
+                console.error(e)
                 if (!!firstImgId) {
                     let id1 = firstImgId;
                     lowScreen && setFullScreenClick();
@@ -1202,6 +1203,7 @@ function initElement() {
         windowsEl = [];
         doorsEl = [];
         electroElements = [];
+        plumbingElements = [];
         rs.forEach(el => {
             if (el.image3D) {
                 let img = new Image();
@@ -1730,7 +1732,7 @@ class Door extends Shape {
     }
 
     getWidth() {
-        return getLengthInDoor(this.position, doorLength,  karkasDepth )
+        return getLengthInDoor(this.position, doorLength, karkasDepth)
     }
 
     getX() {
@@ -1922,7 +1924,7 @@ getLengthInDoor = (position, depth, length) => {
 mirroringDoor = (direction) => {
     switch (direction) {
         case DIRECTION.LEFT:
-            return  DIRECTION.RIGHT;
+            return DIRECTION.RIGHT;
         case DIRECTION.RIGHT:
             return DIRECTION.LEFT;
     }
@@ -2226,11 +2228,11 @@ class Window extends Shape {
     }
 
     getLength() {
-        return getLengthInDoor(this.position, karkasDepth, doorLength)
+        return getLengthInDoor(this.position, karkasDepth, this.length)
     }
 
     getWidth() {
-        return getLengthInDoor(this.position, doorLength,  karkasDepth )
+        return getLengthInDoor(this.position, this.length, karkasDepth)
     }
 
     getX() {
@@ -2749,38 +2751,38 @@ class DragElement extends RelatedShape {
             if (isDragging && (selectedShapeId === this.getId() || selectedShapeId === this.parentId)) {
                 ctx.beginPath();
                 if (parent instanceof Door || parent instanceof Window) {
-                    if (parent.position === POSITION.BOTTOM) {
-
-                        let karkasX = parent.getParent().getX();
-                        let karkasY = parent.getParent().getY();
-                        let karkasWidth = parent.getParent().getWidth() / scale;
-                        let karkasLength = parent.getParent().getLength() / scale;
-
-                        let dragElementX = parent.getX();
-                        let dragElementLength = parent.getLength() / scale;
-                        ctx.moveTo(karkasX, karkasY + karkasWidth);
-                        ctx.lineTo(karkasX, karkasY + karkasWidth + (130 * 5 / scale));
-                        ctx.moveTo(karkasX, karkasY + karkasWidth + 120 * 5 / scale);
-                        ctx.lineTo(dragElementX, karkasY + karkasWidth + 120 * 5 / scale);
-                        ctx.moveTo(dragElementX, karkasY + karkasWidth + 130 * 5 / scale);
-                        ctx.lineTo(dragElementX, karkasY + karkasWidth);
-
-                        ctx.fillStyle = "rgba(0,0,0,0.18)";
-                        ctx.font = "italic 18pt Arial";
-                        let text = parseInt((dragElementX - karkasX) * scale) + " мм";
-                        ctx.fillText(text, karkasX + (dragElementX - karkasX) / 2, karkasY + karkasWidth + 90 * 5 / scale);
-
-                        ctx.moveTo(karkasX + karkasLength, karkasY + karkasWidth);
-                        ctx.lineTo(karkasX + karkasLength, karkasY + karkasWidth + 130 * 5 / scale);
-                        ctx.moveTo(karkasX + karkasLength, karkasY + karkasWidth + 120 * 5 / scale);
-                        ctx.lineTo(dragElementX + dragElementLength, karkasY + karkasWidth + 120 * 5 / scale);
-                        ctx.moveTo(dragElementX + dragElementLength, karkasY + karkasWidth + 130 * 5 / scale);
-                        ctx.lineTo(dragElementX + dragElementLength, karkasY + karkasWidth);
-
-                        text = parseInt((karkasX + karkasLength - dragElementX - dragElementLength) * scale) + " мм";
-                        ctx.fillText(text, dragElementX + dragElementLength + (karkasX + karkasLength - dragElementX - dragElementLength) / 2,
-                            karkasY + karkasWidth + 90 * 5 / scale);
-                    }
+                    // if (parent.position === POSITION.BOTTOM) {
+                    //
+                    //     let karkasX = parent.getParent().getX();
+                    //     let karkasY = parent.getParent().getY();
+                    //     let karkasWidth = parent.getParent().getWidth() / scale;
+                    //     let karkasLength = parent.getParent().getLength() / scale;
+                    //
+                    //     let dragElementX = parent.getX();
+                    //     let dragElementLength = parent.getLength() / scale;
+                    //     ctx.moveTo(karkasX, karkasY + karkasWidth);
+                    //     ctx.lineTo(karkasX, karkasY + karkasWidth + (130 * 5 / scale));
+                    //     ctx.moveTo(karkasX, karkasY + karkasWidth + 120 * 5 / scale);
+                    //     ctx.lineTo(dragElementX, karkasY + karkasWidth + 120 * 5 / scale);
+                    //     ctx.moveTo(dragElementX, karkasY + karkasWidth + 130 * 5 / scale);
+                    //     ctx.lineTo(dragElementX, karkasY + karkasWidth);
+                    //
+                    //     ctx.fillStyle = "rgba(0,0,0,0.18)";
+                    //     ctx.font = "italic 18pt Arial";
+                    //     let text = parseInt((dragElementX - karkasX) * scale) + " мм";
+                    //     ctx.fillText(text, karkasX + (dragElementX - karkasX) / 2, karkasY + karkasWidth + 90 * 5 / scale);
+                    //
+                    //     ctx.moveTo(karkasX + karkasLength, karkasY + karkasWidth);
+                    //     ctx.lineTo(karkasX + karkasLength, karkasY + karkasWidth + 130 * 5 / scale);
+                    //     ctx.moveTo(karkasX + karkasLength, karkasY + karkasWidth + 120 * 5 / scale);
+                    //     ctx.lineTo(dragElementX + dragElementLength, karkasY + karkasWidth + 120 * 5 / scale);
+                    //     ctx.moveTo(dragElementX + dragElementLength, karkasY + karkasWidth + 130 * 5 / scale);
+                    //     ctx.lineTo(dragElementX + dragElementLength, karkasY + karkasWidth);
+                    //
+                    //     text = parseInt((karkasX + karkasLength - dragElementX - dragElementLength) * scale) + " мм";
+                    //     ctx.fillText(text, dragElementX + dragElementLength + (karkasX + karkasLength - dragElementX - dragElementLength) / 2,
+                    //         karkasY + karkasWidth + 90 * 5 / scale);
+                    // }
                 }
                 if (parent instanceof Light) {
 
@@ -2900,15 +2902,15 @@ class Rectangle extends Shape {
         }
         let color = this.color;
         //предупреждение при пересечении//todo написать метод пресечения фигур
-        shapes.forEach(item => {
-            if (!(item instanceof Karkas) &&
-                item.getId() !== this.getId() &&
-                this.relatedShapes.indexOf(item.getId()) === -1 &&
-                (!selectedShapeId || selectedShapeId === this.getId()) &&
-                isMouseInShape(this.getX(), this.getY(), item)) {
-                color = colorRed;
-            }
-        });
+        // shapes.forEach(item => {
+        //     if (!(item instanceof Karkas) &&
+        //         item.getId() !== this.getId() &&
+        //         this.relatedShapes.indexOf(item.getId()) === -1 &&
+        //         (!selectedShapeId || selectedShapeId === this.getId()) &&
+        //         isMouseInShape(this.getX(), this.getY(), item)) {
+        //         color = colorRed;
+        //     }
+        // });
 
         ctx.save();
         ctx.beginPath();
@@ -3272,28 +3274,28 @@ class Socket extends Shape {
                 case 1:
                     this.relatedShapes.push(RelatedShape.createDeleteButton(this, -getScaleValue(7), -getScaleValue(20)));
                     this.relatedShapes.push(RelatedShape.createDragElement(this, (length), getScaleValue(20)));
-                    this.relatedShapes.push(RelatedShape.createTurnButton(this,-getScaleValue(30), -getScaleValue(23)));
+                    this.relatedShapes.push(RelatedShape.createTurnButton(this, -getScaleValue(30), -getScaleValue(23)));
                     break;
                 case 3:
                     this.relatedShapes.push(RelatedShape.createDeleteButton(this, -getScaleValue(7), -getScaleValue(1)));
                     this.relatedShapes.push(RelatedShape.createDragElement(this, (length), getScaleValue(1)));
-                    this.relatedShapes.push(RelatedShape.createTurnButton(this,-getScaleValue(30), -getScaleValue(23)));
+                    this.relatedShapes.push(RelatedShape.createTurnButton(this, -getScaleValue(30), -getScaleValue(23)));
                     break;
                 case 2:
                     this.relatedShapes.push(RelatedShape.createDeleteButton(this, getScaleValue(15), -getScaleValue(7)));
                     this.relatedShapes.push(RelatedShape.createDragElement(this, karkasDepth / 2, (height)));
-                    this.relatedShapes.push(RelatedShape.createTurnButton(this,-getScaleValue(15), -getScaleValue(35)));
+                    this.relatedShapes.push(RelatedShape.createTurnButton(this, -getScaleValue(15), -getScaleValue(35)));
                     break;
                 case 0:
                     this.relatedShapes.push(RelatedShape.createDeleteButton(this, -getScaleValue(17), -getScaleValue(7)));
                     this.relatedShapes.push(RelatedShape.createDragElement(this, getScaleValue(23), (height)));
-                    this.relatedShapes.push(RelatedShape.createTurnButton(this,-getScaleValue(1), -getScaleValue(35)));
+                    this.relatedShapes.push(RelatedShape.createTurnButton(this, -getScaleValue(1), -getScaleValue(35)));
                     break;
             }
         }
         //фигура
         let centerX = this.getX() + this.getLength() / scale / 2;
-        let centerX2 = this.getX() + this.getLength() /scale ;
+        let centerX2 = this.getX() + this.getLength() / scale;
         let centerY = this.getY() + this.getLength() / scale / 2;
         switch (this.view) {
             case 1:
@@ -3319,7 +3321,7 @@ class Socket extends Shape {
 
     turn = () => {
         confirmAllShapes();
-        if(this.view === 3) {
+        if (this.view === 3) {
             this.view = 0;
         } else {
             this.view = this.view + 1
@@ -3354,8 +3356,8 @@ class Plumping extends Rectangle {
             this.parentId = parent.getId();
             this.positionRight = ((x - parent.x) / (parent.getLength() / scale)) * 100;
             this.positionTop = ((y - parent.y) / (parent.width / scale)) * 100;
-            this.price =el.price;
-            this.hint=el.name;
+            this.price = el.price;
+            this.hint = el.name;
             this.height = 2500;
             this.imageId = el.image3D;
             this.image = imageMap.get(el.image3D);
@@ -3453,18 +3455,18 @@ class Plumping extends Rectangle {
         if (this.view === 1) {
             ctx.drawImage(this.image, this.getX(), this.getY(), this.length / scale, this.width / scale);
 
-        } else  if (this.view === 2) {
-            ctx.translate(this.getX() + this.length/scale, this.getY());
+        } else if (this.view === 2) {
+            ctx.translate(this.getX() + this.length / scale, this.getY());
             ctx.rotate(1.57);
-            ctx.drawImage(this.image, 0, 0, this.width/scale, this.length/scale);
-        } else if (this.view === 3)  {
-            ctx.translate(this.getX() + this.length/scale, this.getY() + this.width/scale);
+            ctx.drawImage(this.image, 0, 0, this.width / scale, this.length / scale);
+        } else if (this.view === 3) {
+            ctx.translate(this.getX() + this.length / scale, this.getY() + this.width / scale);
             ctx.rotate(3.15);
-            ctx.drawImage(this.image, 0, 0, this.length/scale, this.width/scale);
-        }else {
-            ctx.translate(this.getX(), this.getY() +  this.width/scale );
+            ctx.drawImage(this.image, 0, 0, this.length / scale, this.width / scale);
+        } else {
+            ctx.translate(this.getX(), this.getY() + this.width / scale);
             ctx.rotate(4.7);
-            ctx.drawImage(this.image, 0, 0, this.width/scale, this.length/scale);
+            ctx.drawImage(this.image, 0, 0, this.width / scale, this.length / scale);
         }
         ctx.restore();
     };
@@ -3472,11 +3474,11 @@ class Plumping extends Rectangle {
     turn = () => {
         turnShape(this);
         confirmAllShapes();
-       if(this.view === 3) {
-           this.view = 0;
-       } else {
-           this.view = this.view + 1
-       }
+        if (this.view === 3) {
+            this.view = 0;
+        } else {
+            this.view = this.view + 1
+        }
     };
 
 }
@@ -3583,6 +3585,86 @@ function drawKarkas2D(x, y, length, width, color) {
     ctx.stroke();
     ctx.closePath();
     ctx.restore();
+    let bottomShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.BOTTOM).sort((a,b)=> {return a.getX() - b.getX()});
+    if (bottomShape.length > 0) {
+        let colorA = "rgba(0,0,0,0.25)";
+        for (let i = 0; i < bottomShape.length; i++) {
+            if (i === 0) {
+                drawArrowShape(karkas.getX(), karkas.getY() + karkas.getWidth() / scale - karkasDepth1, bottomShape[i].getX(), bottomShape[i].getY() - karkasDepth1, POSITION.BOTTOM,
+                    getArrowShift({}, POSITION.BOTTOM), colorA);
+            } else {
+                if (bottomShape[i].getX() > (bottomShape[i - 1].getX() + bottomShape[i - 1].getLength() / scale))
+                drawArrowShape(bottomShape[i - 1].getX() + bottomShape[i - 1].getLength() / scale, bottomShape[i - 1].getY(), bottomShape[i].getX(), bottomShape[i].getY(), POSITION.BOTTOM,
+                    getArrowShift({}, POSITION.BOTTOM), colorA);
+            }
+            if (i === bottomShape.length - 1) {
+                drawArrowShape(bottomShape[i].getX() + bottomShape[i].getLength() / scale, bottomShape[i].getY(),
+                    karkas.getX() + karkas.getLength() / scale, karkas.getY() + karkas.getWidth() / scale - karkasDepth1, POSITION.BOTTOM,
+                    getArrowShift({}, POSITION.BOTTOM), colorA);
+            }
+        }
+
+    }
+    let topShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.TOP).sort((a,b)=> {return a.getX() - b.getX()});
+    if (topShape.length > 0) {
+        let colorA = "rgba(0,0,0,0.25)";
+        for (let i = 0; i < topShape.length; i++) {
+            if (i === 0) {
+                drawArrowShape(karkas.getX(), karkas.getY(), topShape[i].getX(), topShape[i].getY() - karkasDepth1, POSITION.TOP,
+                    getArrowShift({}, POSITION.TOP), colorA);
+            } else {
+                if (topShape[i].getX() > (topShape[i - 1].getX() + topShape[i - 1].getLength() / scale))
+                drawArrowShape(topShape[i - 1].getX() + topShape[i - 1].getLength() / scale, topShape[i - 1].getY(), topShape[i].getX(), topShape[i].getY(), POSITION.TOP,
+                    getArrowShift({}, POSITION.TOP), colorA);
+            }
+            if (i === topShape.length - 1) {
+                drawArrowShape(topShape[i].getX() + topShape[i].getLength() / scale, topShape[i].getY(),
+                    karkas.getX() + karkas.getLength() / scale, karkas.getY() - karkasDepth1, POSITION.TOP,
+                    getArrowShift({}, POSITION.TOP), colorA);
+            }
+        }
+
+    }
+    let leftShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.LEFT).sort((a,b)=> {return a.getY() - b.getY()});
+    if (leftShape.length > 0) {
+        let colorA = "rgba(0,0,0,0.25)";
+        for (let i = 0; i < leftShape.length; i++) {
+            if (i === 0) {
+                drawArrowShape(karkas.getX(), karkas.getY(), leftShape[i].getX(), leftShape[i].getY(), POSITION.LEFT,
+                    getArrowShift({}, POSITION.LEFT), colorA);
+            } else {
+                if (leftShape[i].getY() > (leftShape[i - 1].getY() + leftShape[i - 1].getWidth() / scale))
+                drawArrowShape(leftShape[i - 1].getX(), leftShape[i - 1].getY() + leftShape[i - 1].getWidth() / scale, leftShape[i].getX(), leftShape[i].getY(), POSITION.LEFT,
+                    getArrowShift({}, POSITION.LEFT), colorA);
+            }
+            if (i === leftShape.length - 1) {
+                drawArrowShape(leftShape[i].getX() , leftShape[i].getY() + leftShape[i].getWidth() / scale,
+                    karkas.getX() , karkas.getY() + karkas.getWidth() / scale , POSITION.LEFT,
+                    getArrowShift({}, POSITION.LEFT), colorA);
+            }
+        }
+
+    }
+    let rightShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.RIGHT).sort((a,b)=> {return a.getY() - b.getY()});;
+    if (rightShape.length > 0) {
+        let colorA = "rgba(0,0,0,0.25)";
+        for (let i = 0; i < rightShape.length; i++) {
+            if (i === 0) {
+                drawArrowShape(karkas.getX() + karkas.getLength() / scale - karkasDepth1, karkas.getY(), rightShape[i].getX(), rightShape[i].getY(), POSITION.RIGHT,
+                    getArrowShift({}, POSITION.RIGHT), colorA);
+            } else {
+                if (rightShape[i].getY() > (rightShape[i - 1].getY() + rightShape[i - 1].getWidth() / scale))
+                drawArrowShape(rightShape[i - 1].getX()+ rightShape[i - 1].getLength() / scale, rightShape[i - 1].getY() + rightShape[i - 1].getWidth() / scale, rightShape[i].getX(), rightShape[i].getY(), POSITION.RIGHT,
+                    getArrowShift({}, POSITION.RIGHT), colorA);
+            }
+            if (i === rightShape.length - 1) {
+                drawArrowShape(rightShape[i].getX() , rightShape[i].getY() + rightShape[i].getWidth() / scale,
+                    karkas.getX() + karkas.getLength() / scale , karkas.getY() + karkas.getWidth() / scale , POSITION.RIGHT,
+                    getArrowShift({}, POSITION.RIGHT), colorA);
+            }
+        }
+
+    }
 
 }
 
@@ -3659,6 +3741,29 @@ class ChangeSizeElement extends RelatedShape {
             ctx.stroke();
             ctx.fill();
             ctx.closePath();
+
+            if (isDragging && (selectedShapeId === this.getId() || selectedShapeId === this.parentId)) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.setLineDash([20, 15]);
+                if (parent.getLength() > parent.width) {
+                    let x = this.isFirst ? parent.getX() : parent.getX() + parent.getLength() / scale;
+                    ctx.moveTo(x, karkas.getY());
+                    ctx.lineTo(x, karkas.getY() + karkas.getWidth() / scale);
+                } else {
+                    let dragElementY = parent.getY();
+                    let dragElementLength = parent.getLength() / scale;
+                    let y = this.isFirst ? parent.getY() : parent.getY() + parent.getWidth() / scale;
+                    ctx.moveTo(karkas.getX(), y);
+                    ctx.lineTo(karkas.getX() + karkas.getLength() / scale, y);
+                }
+                ctx.fillStyle = "rgba(0,0,0,0.18)";
+                ctx.strokeStyle = "rgba(0,0,0,0.18)";
+                ctx.stroke();
+                ctx.fill();
+                ctx.closePath();
+                ctx.restore();
+            }
         }
     };
 
@@ -3694,117 +3799,27 @@ class Arrow extends Shape {
     }
 
     draw = function (ctx) {
-
         let parent = this.getParent();
         let arrowType = this.type;
+        let text = this.text;
         if (parent) {
-            let arrowLength = 100 / scale > 20 ? 20 : 100 / scale;
-            let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
-            let arrowFont = 90 / scale > 18 ? 18 : 90 / scale;
-            let arrowShift = getArrowShift(parent, arrowType);
-
-            let arrow60 = getScaleValue(arrowShift[0]);
-            let arrow50 = getScaleValue(arrowShift[1]);
-            let arrow45 = getScaleValue(arrowShift[2]);
-            let arrow55 = getScaleValue(arrowShift[3]);
-
-
-            ctx.beginPath();
-            ctx.strokeStyle = this.color;
-            ctx.moveTo(parent.getX(), parent.getY());
-            if (this.type === POSITION.TOP || this.type === POSITION.BOTTOM) {
-                ctx.lineTo(parent.getX(), parent.getY() + (this.type === POSITION.TOP ? (-arrow60) : (arrow60)));
-                ctx.moveTo(parent.getX() + parent.getLength() / scale, parent.getY());
-                ctx.lineTo(parent.getX() + parent.getLength() / scale, parent.getY() + (this.type === POSITION.TOP ? (-arrow60) : (arrow60)));
-            } else {
-                ctx.lineTo(parent.getX() + (this.type === POSITION.LEFT ? (-arrow60) : arrow60), parent.getY());
-                ctx.moveTo(parent.getX(), parent.getY() + parent.getWidth() / scale);
-                ctx.lineTo(parent.getX() + (this.type === POSITION.LEFT ? (-arrow60) : arrow60), parent.getY() + parent.getWidth() / scale);
-            }
-            ctx.stroke();
-            ctx.closePath();
-
-            ctx.beginPath();
-            ctx.strokeStyle = this.color;
-            if (this.type === POSITION.TOP || this.type === POSITION.BOTTOM) {
-                ctx.moveTo(parent.getX(), parent.getY() + (this.type === POSITION.TOP ? (-arrow50) : (arrow50)));
-                ctx.lineTo(parent.getX() + parent.getLength() / scale, parent.getY() + (this.type === POSITION.TOP ? (-arrow50) : (arrow50)));
-            } else {
-                ctx.moveTo(parent.getX() + (this.type === POSITION.LEFT ? (-arrow50) : arrow50), parent.getY());
-                ctx.lineTo(parent.getX() + (this.type === POSITION.LEFT ? (-arrow50) : arrow50), parent.getY() + parent.getWidth() / scale);
-            }
-            ctx.stroke();
-            ctx.closePath();
-
-            ctx.beginPath();
-            ctx.strokeStyle = this.color;
-            if (this.type === POSITION.TOP || this.type === POSITION.BOTTOM) {
-                drawLeftArrow(ctx, parent.getX(), parent.getY() + (this.type === POSITION.TOP ? (-arrow50) : (+arrow50)), arrowLength, arrowWidth)
-            } else {
-                drawTopArrow(ctx, parent.getX() + (this.type === POSITION.LEFT ? (-arrow50) : arrow50), parent.getY(), arrowWidth, arrowLength)
-            }
-            ctx.fillStyle = 'black';
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-
-            ctx.beginPath();
-            ctx.strokeStyle = this.color;
-            if (this.type === POSITION.TOP || this.type === POSITION.BOTTOM) {
-                drawRightArrow(ctx,
-                    parent.getX() + parent.getLength() / scale,
-                    parent.getY() + (this.type === POSITION.TOP ? (-arrow50) : arrow50), arrowLength, arrowWidth)
-            } else {
-                drawBottomArrow(ctx,
-                    parent.getX() + (this.type === POSITION.LEFT ? (-arrow50) : arrow50),
-                    parent.getY() + parent.getWidth() / scale, arrowWidth, arrowLength)
-            }
-            ctx.fillStyle = 'black';
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-
-            ctx.beginPath();
-            ctx.save();
-            ctx.fillStyle = "#000000";
-            // ctx.font = item.size + "pt";
-            ctx.font = "italic " + arrowFont + "pt Arial";
-            let text = !!this.text ? this.text : (((this.type === POSITION.TOP || this.type === POSITION.BOTTOM) ? Math.round(parent.getLength()) : Math.round(parent.getWidth())) + " мм");
-            let textX = (this.type === POSITION.TOP || this.type === POSITION.BOTTOM) ?
-                (parent.getX() + (parent.getLength() / 2) / scale - text.length * 30 / scale) :
-                this.type === POSITION.LEFT ? parent.getX() - arrow55 : parent.getX() + arrow45;
-            let textY = this._getTextPositionY(this.type, arrow55, arrow45);
-            if (this.type === POSITION.RIGHT) {
-                ctx.translate(textX, textY);
-                ctx.rotate(270 * Math.PI / 180);
-                ctx.fillText(text, -parent.getWidth() / 2 / scale - text.length * 30 / scale, 0);
-            } else if (this.type === POSITION.LEFT) {
-                ctx.translate(textX, textY);
-                ctx.rotate(270 * Math.PI / 180);
-                ctx.fillText(text, -parent.getWidth() / 2 / scale - text.length * 30 / scale, 0);
-            } else {
-                ctx.fillText(text, textX, textY);
-            }
-
-            ctx.restore();
-            ctx.closePath();
-        }
-    };
-
-    _getTextPositionY(type, position55, position45) {
-        let parent = this.getParent();
-        if (parent) {
-            switch (type) {
-                case POSITION.TOP:
-                    return parent.getY() - position55;
-                case POSITION.BOTTOM:
-                    return parent.getY() + position45;
-                default:
-                    return parent.getY() + 0;
-            }
+            drawArrowShape(parent.getX(), parent.getY(), parent.getX() + parent.getLength() / scale,
+                parent.getY() + parent.getWidth() / scale, arrowType, getArrowShift(parent, arrowType),
+                colorGrey, text);
         }
     };
 }
+
+_getTextPositionY = (type, position55, position45, y) => {
+    switch (type) {
+        case POSITION.TOP:
+            return y - position55;
+        case POSITION.BOTTOM:
+            return y + position45;
+        default:
+            return y;
+    }
+};
 
 getArrowShift = (parent, type) => {
     if (parent && parent.name === 'Karkas') {
@@ -3814,6 +3829,102 @@ getArrowShift = (parent, type) => {
     } else {
         return [60, 50, 45, 55]
     }
+};
+
+drawArrowShape = (x, y, x2, y2, arrowType, arrowShift, color, initText) => {
+    let arrowLength = 100 / scale > 20 ? 20 : 100 / scale;
+    let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
+    let arrowFont = 90 / scale > 18 ? 16 : 90 / scale;
+
+    let arrow60 = getScaleValue(arrowShift[0]);
+    let arrow50 = getScaleValue(arrowShift[1]);
+    let arrow45 = getScaleValue(arrowShift[2]);
+    let arrow55 = getScaleValue(arrowShift[3]);
+
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.moveTo(x, y);
+    if (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) {
+        ctx.lineTo(x, y + (arrowType === POSITION.TOP ? (-arrow60) : (arrow60)));
+        ctx.moveTo(x2, y);
+        ctx.lineTo(x2, y + (arrowType === POSITION.TOP ? (-arrow60) : (arrow60)));
+    } else {
+        ctx.lineTo(x + (arrowType === POSITION.LEFT ? (-arrow60) : arrow60), y);
+        ctx.moveTo(x, y2);
+        ctx.lineTo(x + (arrowType === POSITION.LEFT ? (-arrow60) : arrow60), y2);
+    }
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    if (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) {
+        ctx.moveTo(x, y + (arrowType === POSITION.TOP ? (-arrow50) : (arrow50)));
+        ctx.lineTo(x2, y + (arrowType === POSITION.TOP ? (-arrow50) : (arrow50)));
+    } else {
+        ctx.moveTo(x + (arrowType === POSITION.LEFT ? (-arrow50) : arrow50), y);
+        ctx.lineTo(x + (arrowType === POSITION.LEFT ? (-arrow50) : arrow50), y2);
+    }
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    if (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) {
+        drawLeftArrow(ctx, x, y + (arrowType === POSITION.TOP ? (-arrow50) : (+arrow50)), arrowLength, arrowWidth)
+    } else {
+        drawTopArrow(ctx, x + (arrowType === POSITION.LEFT ? (-arrow50) : arrow50), y, arrowWidth, arrowLength)
+    }
+    ctx.fillStyle = 'black';
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    if (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) {
+        drawRightArrow(ctx,
+            x2,
+            y + (arrowType === POSITION.TOP ? (-arrow50) : arrow50), arrowLength, arrowWidth)
+    } else {
+        drawBottomArrow(ctx,
+            x + (arrowType === POSITION.LEFT ? (-arrow50) : arrow50),
+            y2, arrowWidth, arrowLength)
+    }
+    ctx.fillStyle = 'black';
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.save();
+    ctx.fillStyle = "#000000";
+    // ctx.font = item.size + "pt";
+    ctx.font = "italic " + arrowFont + "pt Arial";
+    let text = !!initText ? initText : (((arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ? Math.round((x2 - x) * scale) : Math.round((y2 - y) * scale)) + " мм");
+    text = text + '';
+    if (text.indexOf('мм') === -1) {
+        text = text + " мм"
+    }
+    let textX = (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ?
+        (x + ((x2 - x) / 2) - text.length * 30 / scale) :
+        arrowType === POSITION.LEFT ? x - arrow55 : x + arrow45;
+    let textY = _getTextPositionY(arrowType, arrow55, arrow45, y);
+    if (arrowType === POSITION.RIGHT) {
+        ctx.translate(textX, textY);
+        ctx.rotate(270 * Math.PI / 180);
+        ctx.fillText(text, (y - y2) / 2 - text.length * 30 / scale, 0);
+    } else if (arrowType === POSITION.LEFT) {
+        ctx.translate(textX, textY);
+        ctx.rotate(270 * Math.PI / 180);
+        ctx.fillText(text, (y - y2) / 2 - text.length * 30 / scale, 0);
+    } else {
+        ctx.fillText(text, textX, textY);
+    }
+
+    ctx.restore();
+    ctx.closePath();
 };
 
 //-------------------------------------------end -------------------------/

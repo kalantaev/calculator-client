@@ -1113,6 +1113,9 @@ function divContyny() {
         classV: 'selectable-block', onClick: () => {
             create();
             deserialize();
+            if (karkas && karkas.settingId)
+                initTextures(getBaseConfigById(karkas.settingId), true);
+            changePositionAndScale();
         }
     });
 
@@ -1634,6 +1637,19 @@ class RelatedShape extends Shape {
     static createChangeSizeElement(shape, isFirst) {
         let btn = new ChangeSizeElement(shape);
         btn.isFirst = isFirst;
+        shape.relatedShapes.push(btn.getId());
+        return btn.getId();
+    }
+
+    static createDltSizeElement(shape) {
+        let btn = new DeleteButton(shape, 20, -20);
+        shape.relatedShapes.push(btn.getId());
+        return btn.getId();
+    }
+
+    static createShowArrowElement(shape, shiftX, shiftY) {
+        let btn = new ShowAddArrowButton(shape, shiftX, shiftY);
+        shape.relatedShapes.push(btn.getId());
         return btn.getId();
     }
 
@@ -1778,12 +1794,16 @@ class Door extends Shape {
                         this.shift = this.position === POSITION.TOP ? karkasDepth * 100 / parentWidth : ((parentWidth - karkasDepth - this.getLength() / scale) / parentWidth) * 100;
                         let arrow = getShapeById(this.arrowsId[0]);
                         arrow && (arrow.type = POSITION.LEFT);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         this.position = POSITION.RIGHT;
                         this.revertSize()
                     } else if (parentX > mouseX) {
                         this.shift = this.position === POSITION.TOP ? karkasDepth * 100 / parentWidth : ((parentWidth - karkasDepth - this.getLength() / scale) / parentWidth) * 100;
                         let arrow = getShapeById(this.arrowsId[0]);
                         arrow && (arrow.type = POSITION.RIGHT);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         this.position = POSITION.LEFT;
                         this.revertSize()
                     }
@@ -1812,12 +1832,16 @@ class Door extends Shape {
                     } else if ((parentY + parentWidth) < mouseY) {
                         let arrow = getShapeById(this.arrowsId[0]);
                         arrow && (arrow.type = POSITION.TOP);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         this.shift = this.position === POSITION.LEFT ? karkasDepth * 100 / parentLength : ((parentLength - karkasDepth - this.getWidth() / scale) / parentLength) * 100;
                         this.position = POSITION.BOTTOM;
                         this.revertSize()
                     } else if (parentY > mouseY) {
                         this.shift = this.position === POSITION.LEFT ? karkasDepth * 100 / parentLength : ((parentLength - karkasDepth - this.getWidth() / scale) / parentLength) * 100;
                         let arrow = getShapeById(this.arrowsId[0]);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         arrow && (arrow.type = POSITION.BOTTOM);
                         this.position = POSITION.TOP;
                         this.revertSize()
@@ -1932,6 +1956,8 @@ mirroringDoor = (direction) => {
 
 changeOpenDoor = (arrowsId, opening) => {
     let arrow = getShapeById(arrowsId[0]);
+    arrow && (arrow.shiftX = 0);
+    arrow && (arrow.shiftY = 0);
     switch (opening) {
         case OPENING_TYPE.IN:
             if (arrow) {
@@ -2277,11 +2303,15 @@ class Window extends Shape {
                         this.shift = this.position === POSITION.TOP ? karkasDepth * 100 / parentWidth : ((parentWidth - karkasDepth - this.getLength() / scale) / parentWidth) * 100;
                         let arrow = getShapeById(this.arrowsId[0]);
                         arrow && (arrow.type = POSITION.RIGHT);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         this.position = POSITION.RIGHT;
                     } else if (parentX > mouseX) {
                         this.shift = this.position === POSITION.TOP ? karkasDepth * 100 / parentWidth : ((parentWidth - karkasDepth - this.getLength() / scale) / parentWidth) * 100;
                         let arrow = getShapeById(this.arrowsId[0]);
                         arrow && (arrow.type = POSITION.LEFT);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         this.position = POSITION.LEFT;
                     }
                     break;
@@ -2309,11 +2339,15 @@ class Window extends Shape {
                     } else if ((parentY + parentWidth) < mouseY) {
                         let arrow = getShapeById(this.arrowsId[0]);
                         arrow && (arrow.type = POSITION.BOTTOM);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         this.shift = this.position === POSITION.LEFT ? karkasDepth * 100 / parentLength : ((parentLength - karkasDepth - this.getWidth() / scale) / parentLength) * 100;
                         this.position = POSITION.BOTTOM;
                     } else if (parentY > mouseY) {
                         this.shift = this.position === POSITION.LEFT ? karkasDepth * 100 / parentLength : ((parentLength - karkasDepth - this.getWidth() / scale) / parentLength) * 100;
                         let arrow = getShapeById(this.arrowsId[0]);
+                        arrow && (arrow.shiftX = 0);
+                        arrow && (arrow.shiftY = 0);
                         arrow && (arrow.type = POSITION.TOP);
                         this.position = POSITION.TOP;
                     }
@@ -2480,6 +2514,9 @@ class DeleteButton extends RelatedShape {
         super(shape, shiftX, shiftY);
         this.hint = `Удалить ${shape.nameRu !== undefined ? shape.nameRu : 'элемент'}`;
         this.color = colorRed
+        if (shape.name === 'Arrow') {
+            this.hint = 'Скрыть размер'
+        }
     }
 
     getLength() {
@@ -2506,6 +2543,54 @@ class DeleteButton extends RelatedShape {
         this.deleted = true;
         let parent = this.getParent();
         parent && parent.setDeleted && parent.setDeleted();
+        if (parent.name === 'Arrow') {
+            parent.getParent().arrowsId = [];
+        }
+        serialize();
+        drawAll();
+    }
+}
+
+
+/**
+ * Кнопка для подтверждения, галка
+ */
+class ShowAddArrowButton extends RelatedShape {
+
+    name = 'ShowAddArrowButton';
+    hint = "Отобразить размер";
+
+    constructor(shape, shiftX, shiftY) {
+        super(shape, shiftX, shiftY);
+        this.color = colorBlack
+    }
+
+    getLength() {
+        return getScaleValue(17);
+    }
+
+    getWidth() {
+        return getScaleValue(16);
+    }
+
+    draw = function (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(this.getX(), this.getY());
+        ctx.lineTo(this.getX(), this.getY() + this.getWidth());
+        ctx.moveTo(this.getX(), this.getY()+getScaleValue(4));
+        ctx.lineTo(this.getX() + this.getLength(), this.getY() +getScaleValue(4));
+        ctx.moveTo(this.getX() + this.getLength(), this.getY());
+        ctx.lineTo(this.getX()+ this.getLength(), this.getY() + this.getWidth());
+        ctx.strokeStyle = colorBlack;
+        ctx.stroke();
+        ctx.closePath();
+    };
+
+    onClick = () => {
+        let parent = this.getParent();
+        if(parent) {
+            new Arrow(parent, parent.getLength() > parent.getWidth() ? POSITION.TOP : POSITION.RIGHT, colorBlack)
+        }
         serialize();
         drawAll();
     }
@@ -2871,24 +2956,24 @@ class Rectangle extends Shape {
             let val35 = (35 * scaleCoeff > 35) ? 35 : 35 * scaleCoeff;
             let val30 = (30 * scaleCoeff > 30) ? 30 : 30 * scaleCoeff;
             let needAddDoor = (isGorizontal ? (this.getLength() > doorLength) : (this.getWidth() > doorLength));
-
+            let needShowAddArrow = this.arrowsId.length === 0;
             this.relatedShapes.push(RelatedShape.createDragElement(this, this.getLength() / 2 / scale, this.getWidth() / 2 / scale));
-            this.relatedShapes.push(RelatedShape.createChangeSizeElement(this, true));
-            this.relatedShapes.push(RelatedShape.createChangeSizeElement(this, false));
+            RelatedShape.createChangeSizeElement(this, true);
+            RelatedShape.createChangeSizeElement(this, false);
             let shifts = [];
             if (doors.length > 0) {
                 if (isGorizontal) {
-                    shifts = doors[0].opening === OPENING_TYPE.IN ? [{x: 3, y: 15}, {x: 35, y: 18}, {x: -25, y: 18}] :
-                        [{x: 3, y: undefined}, {x: 35, y: undefined}, {x: -25, y: -31}];
+                    shifts = doors[0].opening === OPENING_TYPE.IN ? [{x: 3, y: 15}, {x: 35, y: 18}, {x: -25, y: 18}, {x: 60, y: 18}] :
+                        [{x: 3, y: undefined}, {x: 35, y: undefined}, {x: -25, y: -31}, {x: 60, y: -32}];
                 } else {
                     shifts = doors[0].opening === OPENING_TYPE.IN ? [{x: 19, y: -15}, {x: 20, y: 19}, {
                         x: 24,
                         y: -45
-                    }] : [{x: -35, y: -15}, {x: -30, y: 19}, {x: -30, y: -45}];
+                    }, {x: 20, y: 40}] : [{x: -35, y: -15}, {x: -30, y: 19}, {x: -30, y: -45}, {x: -30, y: 40}];
                 }
             } else {
-                shifts = isGorizontal ? [{x: 3, y: -34}, {x: 35, y: -30}, {x: -25, y: -31}] :
-                    [{x: 19, y: -15}, {x: 20, y: 19}, {x: 24, y: -45}];
+                shifts = isGorizontal ? [{x: 3, y: -34}, {x: 35, y: -30}, {x: -25, y: -31}, {x: 60, y: -30}] :
+                    [{x: 19, y: -15}, {x: 20, y: 19}, {x: 24, y: -45}, {x: 20, y: 40}];
             }
             this.relatedShapes.push(RelatedShape.createTurnButton(this,
                 getScaleValue(Math.abs(shifts[0].x)) * shifts[0].x / Math.abs(shifts[0].x),
@@ -2896,6 +2981,9 @@ class Rectangle extends Shape {
             this.relatedShapes.push(RelatedShape.createDeleteButton(this,
                 getScaleValue(Math.abs(shifts[1].x)) * shifts[1].x / Math.abs(shifts[1].x),
                 !shifts[1].y ? undefined : getScaleValue(Math.abs(shifts[1].y)) * shifts[1].y / Math.abs(shifts[1].y)));
+            needShowAddArrow && RelatedShape.createShowArrowElement(this,
+                getScaleValue(Math.abs(shifts[3].x)) * shifts[3].x / Math.abs(shifts[3].x),
+                !shifts[3].y ? undefined : getScaleValue(Math.abs(shifts[3].y)) * shifts[3].y / Math.abs(shifts[3].y));
             needAddDoor && this.relatedShapes.push(RelatedShape.createAddDoorButton(this,
                 getScaleValue(Math.abs(shifts[2].x)) * shifts[2].x / Math.abs(shifts[2].x),
                 !shifts[2].y ? undefined : getScaleValue(Math.abs(shifts[2].y)) * shifts[2].y / Math.abs(shifts[2].y)));
@@ -2991,10 +3079,6 @@ class Partition extends Rectangle {
             } else {
                 this.positionRight = (((parent.getLength() / scale) - karkasDepth1 - thisLength) / (parent.getLength() / scale)) * 100;
             }
-            let magnetShapeX1 = magnetShapeX(this);
-            if (magnetShapeX1) {
-                this.setX(this.getX() + magnetShapeX1)
-            }
         }
     }
 
@@ -3063,9 +3147,9 @@ class Partition extends Rectangle {
                 setDeleteAllShapeInArrId(this.arrowsId);
                 this.arrowsId = [];
             } else {
-                if (this.arrowsId.length === 0) {
-                    new Arrow(this, POSITION.LEFT, colorBlack);
-                }
+                // if (this.arrowsId.length === 0) {
+                //     new Arrow(this, POSITION.LEFT, colorBlack);
+                // }
             }
         }
     }
@@ -3079,6 +3163,10 @@ class Partition extends Rectangle {
             if (this.getWidth() + karkasDepth * 2 > innerParentWidth) {
                 this.width = innerParentWidth;
                 setDeleteAllShapeInArrId(this.arrowsId);
+            } else {
+                let arrow = getShapeById(this.arrowsId[0]);
+                arrow && (arrow.shiftX = 0);
+                arrow && (arrow.shiftY = 0);
             }
         }
         this.confirm();
@@ -3393,10 +3481,10 @@ class Plumping extends Rectangle {
             } else {
                 this.positionRight = (((parent.getLength() / scale) - karkasDepth1 - thisLength) / (parent.getLength() / scale)) * 100;
             }
-            let magnetShapeX1 = magnetShapeX(this);
-            if (magnetShapeX1) {
-                this.setX(this.getX() + magnetShapeX1)
-            }
+            // let magnetShapeX1 = magnetShapeX(this);
+            // if (magnetShapeX1) {
+            //     this.setX(this.getX() + magnetShapeX1)
+            // }
         }
     }
 
@@ -3585,7 +3673,9 @@ function drawKarkas2D(x, y, length, width, color) {
     ctx.stroke();
     ctx.closePath();
     ctx.restore();
-    let bottomShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.BOTTOM).sort((a,b)=> {return a.getX() - b.getX()});
+    let bottomShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.BOTTOM).sort((a, b) => {
+        return a.getX() - b.getX()
+    });
     if (bottomShape.length > 0) {
         let colorA = "rgba(0,0,0,0.25)";
         for (let i = 0; i < bottomShape.length; i++) {
@@ -3594,8 +3684,8 @@ function drawKarkas2D(x, y, length, width, color) {
                     getArrowShift({}, POSITION.BOTTOM), colorA);
             } else {
                 if (bottomShape[i].getX() > (bottomShape[i - 1].getX() + bottomShape[i - 1].getLength() / scale))
-                drawArrowShape(bottomShape[i - 1].getX() + bottomShape[i - 1].getLength() / scale, bottomShape[i - 1].getY(), bottomShape[i].getX(), bottomShape[i].getY(), POSITION.BOTTOM,
-                    getArrowShift({}, POSITION.BOTTOM), colorA);
+                    drawArrowShape(bottomShape[i - 1].getX() + bottomShape[i - 1].getLength() / scale, bottomShape[i - 1].getY(), bottomShape[i].getX(), bottomShape[i].getY(), POSITION.BOTTOM,
+                        getArrowShift({}, POSITION.BOTTOM), colorA);
             }
             if (i === bottomShape.length - 1) {
                 drawArrowShape(bottomShape[i].getX() + bottomShape[i].getLength() / scale, bottomShape[i].getY(),
@@ -3605,7 +3695,9 @@ function drawKarkas2D(x, y, length, width, color) {
         }
 
     }
-    let topShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.TOP).sort((a,b)=> {return a.getX() - b.getX()});
+    let topShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.TOP).sort((a, b) => {
+        return a.getX() - b.getX()
+    });
     if (topShape.length > 0) {
         let colorA = "rgba(0,0,0,0.25)";
         for (let i = 0; i < topShape.length; i++) {
@@ -3614,8 +3706,8 @@ function drawKarkas2D(x, y, length, width, color) {
                     getArrowShift({}, POSITION.TOP), colorA);
             } else {
                 if (topShape[i].getX() > (topShape[i - 1].getX() + topShape[i - 1].getLength() / scale))
-                drawArrowShape(topShape[i - 1].getX() + topShape[i - 1].getLength() / scale, topShape[i - 1].getY(), topShape[i].getX(), topShape[i].getY(), POSITION.TOP,
-                    getArrowShift({}, POSITION.TOP), colorA);
+                    drawArrowShape(topShape[i - 1].getX() + topShape[i - 1].getLength() / scale, topShape[i - 1].getY(), topShape[i].getX(), topShape[i].getY(), POSITION.TOP,
+                        getArrowShift({}, POSITION.TOP), colorA);
             }
             if (i === topShape.length - 1) {
                 drawArrowShape(topShape[i].getX() + topShape[i].getLength() / scale, topShape[i].getY(),
@@ -3625,7 +3717,9 @@ function drawKarkas2D(x, y, length, width, color) {
         }
 
     }
-    let leftShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.LEFT).sort((a,b)=> {return a.getY() - b.getY()});
+    let leftShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.LEFT).sort((a, b) => {
+        return a.getY() - b.getY()
+    });
     if (leftShape.length > 0) {
         let colorA = "rgba(0,0,0,0.25)";
         for (let i = 0; i < leftShape.length; i++) {
@@ -3634,18 +3728,21 @@ function drawKarkas2D(x, y, length, width, color) {
                     getArrowShift({}, POSITION.LEFT), colorA);
             } else {
                 if (leftShape[i].getY() > (leftShape[i - 1].getY() + leftShape[i - 1].getWidth() / scale))
-                drawArrowShape(leftShape[i - 1].getX(), leftShape[i - 1].getY() + leftShape[i - 1].getWidth() / scale, leftShape[i].getX(), leftShape[i].getY(), POSITION.LEFT,
-                    getArrowShift({}, POSITION.LEFT), colorA);
+                    drawArrowShape(leftShape[i - 1].getX(), leftShape[i - 1].getY() + leftShape[i - 1].getWidth() / scale, leftShape[i].getX(), leftShape[i].getY(), POSITION.LEFT,
+                        getArrowShift({}, POSITION.LEFT), colorA);
             }
             if (i === leftShape.length - 1) {
-                drawArrowShape(leftShape[i].getX() , leftShape[i].getY() + leftShape[i].getWidth() / scale,
-                    karkas.getX() , karkas.getY() + karkas.getWidth() / scale , POSITION.LEFT,
+                drawArrowShape(leftShape[i].getX(), leftShape[i].getY() + leftShape[i].getWidth() / scale,
+                    karkas.getX(), karkas.getY() + karkas.getWidth() / scale, POSITION.LEFT,
                     getArrowShift({}, POSITION.LEFT), colorA);
             }
         }
 
     }
-    let rightShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.RIGHT).sort((a,b)=> {return a.getY() - b.getY()});;
+    let rightShape = shapes.filter(i => i.parentId === karkas.getId() && i.position === POSITION.RIGHT).sort((a, b) => {
+        return a.getY() - b.getY()
+    });
+    ;
     if (rightShape.length > 0) {
         let colorA = "rgba(0,0,0,0.25)";
         for (let i = 0; i < rightShape.length; i++) {
@@ -3654,12 +3751,12 @@ function drawKarkas2D(x, y, length, width, color) {
                     getArrowShift({}, POSITION.RIGHT), colorA);
             } else {
                 if (rightShape[i].getY() > (rightShape[i - 1].getY() + rightShape[i - 1].getWidth() / scale))
-                drawArrowShape(rightShape[i - 1].getX()+ rightShape[i - 1].getLength() / scale, rightShape[i - 1].getY() + rightShape[i - 1].getWidth() / scale, rightShape[i].getX(), rightShape[i].getY(), POSITION.RIGHT,
-                    getArrowShift({}, POSITION.RIGHT), colorA);
+                    drawArrowShape(rightShape[i - 1].getX() + rightShape[i - 1].getLength() / scale, rightShape[i - 1].getY() + rightShape[i - 1].getWidth() / scale, rightShape[i].getX(), rightShape[i].getY(), POSITION.RIGHT,
+                        getArrowShift({}, POSITION.RIGHT), colorA);
             }
             if (i === rightShape.length - 1) {
-                drawArrowShape(rightShape[i].getX() , rightShape[i].getY() + rightShape[i].getWidth() / scale,
-                    karkas.getX() + karkas.getLength() / scale , karkas.getY() + karkas.getWidth() / scale , POSITION.RIGHT,
+                drawArrowShape(rightShape[i].getX(), rightShape[i].getY() + rightShape[i].getWidth() / scale,
+                    karkas.getX() + karkas.getLength() / scale, karkas.getY() + karkas.getWidth() / scale, POSITION.RIGHT,
                     getArrowShift({}, POSITION.RIGHT), colorA);
             }
         }
@@ -3681,11 +3778,11 @@ class ChangeSizeElement extends RelatedShape {
         let parent = this.getParent();
         if (parent) {
             return this.isFirst ?
-                parent.getLength() > parent.width ?
-                    parent.getX() - parent.width / 2 / scale - 3 : parent.getX() - 3
+                parent.getLength() > parent.getWidth() ?
+                    parent.getX() - parent.getWidth() / 2 / scale - getScaleValue(3) : parent.getX() - getScaleValue(3)
                 :
-                parent.getLength() > parent.width ?
-                    parent.getX() + parent.getLength() / scale - parent.width / 2 / scale - 3 : parent.getX() + parent.getLength() / 2 / scale - 5
+                parent.getLength() > parent.getWidth() ?
+                    parent.getX() + parent.getLength() / scale - parent.getWidth() / 2 / scale - getScaleValue(3) : parent.getX() + parent.getLength() / 2 / scale - getScaleValue(6)
         }
     }
 
@@ -3694,11 +3791,11 @@ class ChangeSizeElement extends RelatedShape {
         let parent = this.getParent();
         if (parent) {
             return this.isFirst ?
-                parent.getLength() > parent.width ?
-                    parent.getY() - 3 : parent.getY() - 3 - parent.getLength() / 2 / scale
+                parent.getLength() > parent.getWidth() ?
+                    parent.getY() - getScaleValue(3) : parent.getY() - getScaleValue(3) - parent.getLength() / 2 / scale
                 :
-                parent.getLength() > parent.width ?
-                    parent.getY() - 3 : parent.getY() + parent.width / scale - 6
+                parent.getLength() > parent.getWidth() ?
+                    parent.getY() - getScaleValue(3) : parent.getY() + parent.getWidth() / scale - getScaleValue(6)
         }
     }
 
@@ -3709,8 +3806,8 @@ class ChangeSizeElement extends RelatedShape {
     getWidth() {
         let parent = this.getParent();
         if (parent) {
-            return parent.getLength() > parent.width ?
-                (parent.width / scale) + 6 : (parent.getLength() / scale) + 6
+            return (parent.getLength() > parent.getWidth() ?
+                (parent.getWidth()) : (parent.getLength())) * 2
         }
 
     }
@@ -3725,16 +3822,16 @@ class ChangeSizeElement extends RelatedShape {
 
 
             if (this.isFirst) {
-                if (parent.getLength() > parent.width) {
-                    ctx.arc(parent.getX(), parent.getY() + parent.width / 2 / scale, parent.width / 2 / scale + 1, 0, Math.PI * 2, false);
+                if (parent.getLength() > parent.getWidth()) {
+                    ctx.arc(parent.getX(), parent.getY() + parent.getWidth() / 2 / scale, parent.getWidth() / 2 / scale + 1, 0, Math.PI * 2, false);
                 } else {
                     ctx.arc(parent.getX() + parent.getLength() / 2 / scale, parent.getY(), parent.getLength() / 2 / scale + 1, 0, Math.PI * 2, false);
                 }
             } else {
-                if (parent.getLength() > parent.width) {
-                    ctx.arc(parent.getX() + parent.getLength() / scale, parent.getY() + parent.width / 2 / scale, parent.width / 2 / scale + 1, 0, Math.PI * 2, false);
+                if (parent.getLength() > parent.getWidth()) {
+                    ctx.arc(parent.getX() + parent.getLength() / scale, parent.getY() + parent.getWidth() / 2 / scale, parent.getWidth() / 2 / scale + 1, 0, Math.PI * 2, false);
                 } else {
-                    ctx.arc(parent.getX() + parent.getLength() / 2 / scale, parent.getY() + parent.width / scale, parent.getLength() / 2 / scale + 1, 0, Math.PI * 2, false);
+                    ctx.arc(parent.getX() + parent.getLength() / 2 / scale, parent.getY() + parent.getWidth() / scale, parent.getLength() / 2 / scale + 1, 0, Math.PI * 2, false);
 
                 }
             }
@@ -3746,7 +3843,7 @@ class ChangeSizeElement extends RelatedShape {
                 ctx.save();
                 ctx.beginPath();
                 ctx.setLineDash([20, 15]);
-                if (parent.getLength() > parent.width) {
+                if (parent.getLength() > parent.getWidth()) {
                     let x = this.isFirst ? parent.getX() : parent.getX() + parent.getLength() / scale;
                     ctx.moveTo(x, karkas.getY());
                     ctx.lineTo(x, karkas.getY() + karkas.getWidth() / scale);
@@ -3784,6 +3881,8 @@ class Arrow extends Shape {
 
     type;
     name = 'Arrow';
+    shiftX = 0;
+    shiftY = 0;
 
     constructor(releted, type, color, text) {
         if (releted) {
@@ -3803,11 +3902,78 @@ class Arrow extends Shape {
         let arrowType = this.type;
         let text = this.text;
         if (parent) {
-            drawArrowShape(parent.getX(), parent.getY(), parent.getX() + parent.getLength() / scale,
-                parent.getY() + parent.getWidth() / scale, arrowType, getArrowShift(parent, arrowType),
-                colorGrey, text);
+            let size = this.getSize();
+            let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
+            let arrowShift =getArrowShift(parent, arrowType);
+
+            let x = parent.getX();
+            let y = parent.getY();
+            let x2 = parent.getX() + parent.getLength() / scale;
+            let y2 = parent.getY() + parent.getWidth() / scale;
+
+            drawArrowShape2(x, y, x2,y2, arrowType, arrowShift,
+                colorGrey, text, size );
+
+            if (!this.fixed && this.relatedShapes.length == 0) {
+                RelatedShape.createChangeSizeElement(this, true);
+                RelatedShape.createChangeSizeElement(this, false);
+                parent.name !== 'Karkas' && RelatedShape.createDltSizeElement(this);
+            }
+
         }
     };
+
+    getSize = () => {
+        let parent = this.getParent();
+        let arrowType = this.type;
+        if (parent) {
+            let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
+            let arrowShift = getArrowShift(parent, arrowType);
+
+            let arrow60 = getScaleValue(arrowShift[0]);
+            let arrow50 = getScaleValue(arrowShift[1]);
+
+            let x = parent.getX();
+            let y = parent.getY();
+            let x2 = parent.getX() + parent.getLength() / scale;
+            let y2 = parent.getY() + parent.getWidth() / scale;
+
+            // линии отходящие от фигуры
+            let firstLine = createFirstLine(x, y, arrowType, arrow60, this.shiftX, this.shiftY);
+            let secondLine = createSecondLine(x, y, x2, y2, arrowType, arrow60, this.shiftX, this.shiftY);
+            let arrowLine = createArrowLine(firstLine, secondLine);
+
+            let size = new Size(firstLine, secondLine, arrowLine, arrowType);
+            return size;
+        }
+    }
+
+    getX() {
+        let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
+        return  this.type === POSITION.LEFT || this.type === POSITION.RIGHT ? this.getSize().arrowLine.startX - arrowWidth/2 : this.getSize().arrowLine.startX;
+    }
+
+    getY() {
+        let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
+        return this.type === POSITION.TOP ? this.getSize().arrowLine.startY - arrowWidth/2 :
+            this.type === POSITION.BOTTOM ? this.getSize().arrowLine.startY - arrowWidth/2 :
+                this.getSize().arrowLine.startY;
+    }
+
+    getWidth() {
+        let arrowWidth = 500 / scale > 10 ? 45 : 500 / scale;
+        return this.type === POSITION.TOP || this.type === POSITION.BOTTOM ? arrowWidth : this.getSize().arrowLine.getLength();
+    }
+
+    getLength() {
+        let arrowWidth = 500 / scale > 10 ? 40 : 500 / scale;
+        return this.type === POSITION.TOP || this.type === POSITION.BOTTOM ? this.getSize().arrowLine.getLength() : arrowWidth;
+    }
+
+    resize(x, y) {
+        this.shiftX +=x;
+        this.shiftY +=y;
+    }
 }
 
 _getTextPositionY = (type, position55, position45, y) => {
@@ -3818,6 +3984,16 @@ _getTextPositionY = (type, position55, position45, y) => {
             return y + position45;
         default:
             return y;
+    }
+};
+_getTextPositionY2 = (type, y) => {
+    switch (type) {
+        case POSITION.TOP:
+            return y - getScaleValue(5);
+        case POSITION.BOTTOM:
+            return y - getScaleValue(5);
+        default:
+            return y ;
     }
 };
 
@@ -3927,6 +4103,188 @@ drawArrowShape = (x, y, x2, y2, arrowType, arrowShift, color, initText) => {
     ctx.closePath();
 };
 
+class Line {
+    startX;
+    startY;
+    endX;
+    endY;
+
+    constructor(startX, startY, endX, endY){
+        this.startX = startX;
+        this.startY = startY;
+        this.endX = endX;
+        this.endY = endY;
+    }
+
+    draw = () => {
+        ctx.beginPath();
+        ctx.strokeStyle = colorGrey;
+        ctx.moveTo(this.startX, this.startY);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    getLengthString = () => {
+       return this.getLength() + " мм" ;
+    }
+
+    getLength = () => {
+        let leg1 = Math.abs((this.startX - this.endX));
+        let leg2 = Math.abs((this.startY - this.endY));
+        if (leg1 === 0) {
+            return Math.round(leg2 * scale);
+        }
+        if (leg2 === 0) {
+            return Math.round(leg1 * scale);
+        }
+        let hypotenuse = Math.sqrt(leg1 * leg1 + leg2 * leg2);
+        return Math.round(hypotenuse * scale);
+    }
+
+}
+
+drawLine = (line, color = colorGrey) => {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.moveTo(line.startX, line.startY);
+    ctx.lineTo(line.endX, line.endY);
+    ctx.stroke();
+    ctx.closePath();
+};
+
+class Size {
+    line1;
+    line2;
+    arrowLine;
+    position;
+
+    constructor(l1, l2, l3, position){
+        this.line1 = l1;
+        this.line2 = l2;
+        this.arrowLine = l3;
+        this.position = position;
+    }
+
+    draw = () => {
+        let arrowWidth = 50 / scale > 10 ? 10 : 50 / scale;
+        let arrowLength = 100 / scale > 20 ? 20 : 100 / scale;
+
+        this.line1.draw();
+        this.line2.draw();
+        this.arrowLine.draw();
+
+        //стрелки
+        ctx.beginPath();
+        ctx.strokeStyle = colorBlack;
+        if (this.position === POSITION.TOP || this.position === POSITION.BOTTOM) {
+            drawLeftArrow(ctx, this.arrowLine.startX, this.arrowLine.startY, arrowLength, arrowWidth);
+            drawRightArrow(ctx, this.arrowLine.endX, this.arrowLine.endY, arrowLength, arrowWidth);
+        } else {
+            drawTopArrow(ctx, this.arrowLine.startX, this.arrowLine.startY, arrowWidth, arrowLength);
+            drawBottomArrow(ctx, this.arrowLine.endX, this.arrowLine.endY, arrowWidth, arrowLength);
+        }
+        ctx.fillStyle = 'black';
+        ctx.fill();
+        ctx.stroke();
+        ctx.closePath();
+    }
+}
+
+createFirstLine = (x, y, arrowType, arrow60, sX, sY) => {
+    return new Line(x, y,
+        ((arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ? x : (x + (arrowType === POSITION.LEFT ? (-arrow60) : arrow60))) + sX,
+        ((arrowType === POSITION.LEFT || arrowType === POSITION.RIGHT) ? y : (y + (arrowType === POSITION.TOP ? (-arrow60) : (arrow60)))) + sY)
+};
+createSecondLine = (x, y, x2, y2, arrowType, arrow60, sX, sY) => {
+    return new Line((arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ? x2 : x,
+        (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ? y : y2,
+        ((arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ? x2 : (x + (arrowType === POSITION.LEFT ? (-arrow60) : arrow60)))  + sX,
+        ((arrowType === POSITION.LEFT || arrowType === POSITION.RIGHT) ? y2 : (y + (arrowType === POSITION.TOP ? (-arrow60) : (arrow60))))  + sY)
+};
+
+createArrowLine = (firstLine, secondLine) => {
+    let l1 = Math.abs(firstLine.startX - firstLine.endX);
+    let l2 = Math.abs(firstLine.startY - firstLine.endY);
+    let coeffX = l1 !== 0 ? getScaleValue(10) : 0;
+    let coeffY = l2 !== 0 ? getScaleValue(10) : 0;
+    if (l1 !== 0) {
+        coeffX = (getScaleValue(10) * (l1)) / (firstLine.getLength() / scale);
+    }
+    if (l2 !== 0) {
+        coeffY = (getScaleValue(10) * (l2)) / (firstLine.getLength() / scale);
+    }
+    if (firstLine.startX - firstLine.endX < 0) {
+        coeffX *=-1;
+    }
+    if (firstLine.startY - firstLine.endY < 0) {
+        coeffY *=-1;
+    }
+    //линия размера со стрелками
+    let arrowLine = new Line(firstLine.endX + coeffX ,
+        firstLine.endY + coeffY,
+        secondLine.endX + coeffX,
+        secondLine.endY + coeffY);
+
+    return arrowLine
+};
+
+drawArrowShape2 = (x, y, x2, y2, arrowType, arrowShift, color, initText, size) => {
+
+    let arrow45 = getScaleValue(arrowShift[2]);
+    let arrow55 = getScaleValue(arrowShift[3]);
+    let arrowFont = 90 / scale > 18 ? 16 : 90 / scale;
+
+    size.draw();
+
+    let arrowLine = size.arrowLine;
+
+    //текст
+    ctx.beginPath();
+    ctx.save();
+    ctx.fillStyle = "#000000";
+    // ctx.font = item.size + "pt";
+    ctx.font = "italic " + arrowFont + "pt Arial";
+    let text = prepareSizeText(initText, arrowLine);
+    let textX = (arrowType === POSITION.TOP || arrowType === POSITION.BOTTOM) ?
+        (arrowLine.startX + ((arrowLine.endX - arrowLine.startX) / 2) - text.length * 30 / scale) :
+        arrowType === POSITION.LEFT ? arrowLine.startX - arrow55 : arrowLine.startX + arrow45;
+    let textY = _getTextPositionY2(arrowType, arrowLine.startY);
+    if (arrowType === POSITION.RIGHT) {
+        ctx.translate(textX, textY);
+        ctx.rotate(270 * Math.PI / 180);
+        ctx.fillText(text, (arrowLine.startY - arrowLine.endY) / 2 - text.length * 30 / scale, - getScaleValue(50));
+    } else if (arrowType === POSITION.LEFT) {
+        ctx.translate(textX, textY);
+        ctx.rotate(270 * Math.PI / 180);
+        ctx.fillText(text, (arrowLine.startY - arrowLine.endY) / 2 - text.length * 30 / scale, + getScaleValue(50));
+    } else {
+        ctx.fillText(text, textX, textY);
+    }
+
+    ctx.restore();
+    ctx.closePath();
+};
+
+prepareSizeText = (initText, arrowLine) => {
+    let text = !!initText ? initText : arrowLine.getLengthString();
+    text = text + '';
+    if (text.indexOf('мм') === -1) {
+        text = text + " мм"
+    }
+    return text;
+};
+
+drawArc = (x, y, radius, color= 'black') => {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+}
+
 //-------------------------------------------end -------------------------/
 turnShape = (shape) => {
 
@@ -3950,6 +4308,8 @@ turnShape = (shape) => {
 
     let arrow = getShapeById(shape.arrowsId[0]);
     if (arrow) {
+        arrow.shiftX = 0;
+        arrow.shiftY = 0;
         if (arrow.type === POSITION.TOP) {
             arrow.type = POSITION.RIGHT
         } else if (arrow.type === POSITION.BOTTOM) {
@@ -3986,15 +4346,17 @@ function rolClick(e) {
 // given mouse X & Y (mx & my) and shape object
 // return true/false whether mouse is inside the shape
 function isMouseInShape(mx, my, shape) {
-    var rLeft = shape.getX() - 10;
-    var rRight = shape.getX() + shape.getLength() / scale + 20;
-    var rTop = shape.getY() - 10;
-    var rBott = shape.getY() + shape.getWidth() / scale + 20;
-    // math test to see if mouse is inside rectangle
-    if (shape.name === 'Light') {
-        console.info(my, shape.getY(), rBott, shape.getWidth());
 
-    }
+    var rLeft = shape.getX() - 5;
+    var rRight = shape.getX() + shape.getLength() / scale + 10;
+    var rTop = shape.getY() - 5;
+    var rBott = shape.getY() + shape.getWidth() / scale + 10;
+
+    // var rLeft = shape.getX() ;
+    // var rRight = shape.getX() + shape.getLength() / scale;
+    // var rTop = shape.getY() ;
+    // var rBott = shape.getY() + shape.getWidth() / scale;
+    // math test to see if mouse is inside rectangle
     if (mx > rLeft && mx < rRight && my > rTop && my < rBott) {
         return (true);
     }
@@ -4047,7 +4409,7 @@ function handleMouseDown(e) {
     }
 
     for (var i = 0; i < shapes.length; i++) {
-        if (shapes[i] instanceof ChangeSizeElement && !shapes[i].notDragable && isMouseInShape(startX, startY, shapes[i])) {
+        if (shapes[i].name === 'ChangeSizeElement' && isMouseInShape(startX, startY, shapes[i])) {
             shapes[i].onClick && shapes[i].onClick();
             if (shapes[i]) {
                 selectedShapeId = shapes[i].getId();
@@ -4057,7 +4419,7 @@ function handleMouseDown(e) {
         }
     }
     for (var i = 0; i < shapes.length; i++) {
-        if (!shapes[i].notDragable && isMouseInShapeAccurency100(startX, startY, shapes[i])) {
+        if (!shapes[i].notDragable && shapes[i].name !== 'ChangeSizeElement' && isMouseInShapeAccurency100(startX, startY, shapes[i])) {
             shapes[i].onClick && shapes[i].onClick();
             if (shapes[i]) {
                 selectedShapeId = shapes[i].getId();
@@ -4082,6 +4444,18 @@ function handleMouseUp(e) {
     e.preventDefault();
     e.stopPropagation();
     updateIntersection();
+
+    var selectedShape = getSelectedShape();
+    let magnetShapeXValue = magnetShapeX(selectedShape);
+    let isArrow = selectedShape.getParent && selectedShape.getParent() && selectedShape.getParent().name === 'Arrow';
+    if (magnetShapeXValue && !isArrow) {
+        if (selectedShape instanceof ChangeSizeElement) {
+            selectedShape.resizeShape(magnetShapeXValue, selectedShape.getY())
+        } else {
+            selectedShape.setX(selectedShape.getX() + magnetShapeXValue);
+            selectedShape.setY(selectedShape.getY());
+        }
+    }
 
     // the drag is over -- clear the isDragging flag
     isDragging = false;
@@ -4241,7 +4615,7 @@ function handleMouseMove(e) {
 function magnetShapeX(shape) {
     let accuracyWithScale = getScaleValue(accuracy);
     let result = 0;
-    shapes.filter(item => item.getId() !== shape.getId())
+    shapes.filter(item => item.getId() !== shape.getId() && item.name !== 'Arrow')
         .filter(item => !(item instanceof RelatedShape))
         .filter(item => !(item instanceof Arrow))
         .filter(item => shape.getId() !== item.parentId)
@@ -5317,7 +5691,7 @@ function getShapeById(id) {
 //--------- Серилизация и дэсерелизация из sessionStorage  ---------------//
 
 function isSerialized(shape) {
-    let notSerialised = ['DragElement', 'ChangeSizeElement', 'ChangeOpenTypeButton', 'AddInnerDoorButton', 'MirrorButton', 'DeleteButton', 'EditButton', 'ConfirmButton', 'TurnButton'];
+    let notSerialised = ['DragElement', 'ChangeSizeElement', 'ChangeOpenTypeButton', 'AddInnerDoorButton', 'MirrorButton', 'DeleteButton', 'ShowAddArrowButton', 'EditButton', 'ConfirmButton', 'TurnButton'];
     return notSerialised.indexOf(shape.name) === -1
 }
 
